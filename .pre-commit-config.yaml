@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 'v4.6.0'
+    hooks:
+      - id: check-ast
+      - id: trailing-whitespace
+      - id: debug-statements
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+  - repo: https://github.com/asottile/reorder-python-imports
+    rev: 'v3.13.0'
+    hooks:
+      - id: reorder-python-imports
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pycqa/flake8
+    rev: '7.1.0'
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-pytest-style
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-print
+          - darglint
+        args: ["--ignore=DAR102"]
+  - repo: https://github.com/hadialqattan/pycln
+    rev: 'v2.4.0'
+    hooks:
+      - id: pycln
+        args: ["--all"]
