@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Check if the virtual environment directory exists
 if [ ! -d "venv" ]; then
@@ -6,11 +6,6 @@ if [ ! -d "venv" ]; then
     exit 1
 fi
 
-# Activate the virtual environment
-source venv/bin/activate
-
 # Enter the virtual environment
-echo "Entering virtual environment. Press ctrl+d to exit."
-exec $SHELL
-
-done
+echo "Entering virtual environment. Press ctrl+d to exit shell or deactivate to exit venv."
+source venv/bin/activate
