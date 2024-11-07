@@ -9,6 +9,8 @@ def main():
 
     """
     # Code goes over here.
+
+    print("Hello World!")
     return 0
 
 
