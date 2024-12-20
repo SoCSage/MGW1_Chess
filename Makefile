@@ -1,7 +1,7 @@
 # Variables
 VENV_DIR := venv
 PYTHON := python3
-BINARY_NAME := main
+BINARY_NAME := chess
 
 # Targets
 .PHONY: all create_venv install_reqs build clean_build clean
@@ -22,7 +22,7 @@ install_reqs:
 	@echo "Pre-commit hooks updated."
 
 build:
-	$(VENV_DIR)/bin/pyinstaller --onefile --name $(BINARY_NAME) --paths=src src/main.py
+	$(VENV_DIR)/bin/pyinstaller --onefile --name $(BINARY_NAME) --paths=src src/app.py
 	@echo "Build completed. Binary created as $(BINARY_NAME)."
 
 clean_build:
