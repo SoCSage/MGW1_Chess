@@ -33,7 +33,7 @@
 Ensure `activate.sh` is executable:
 
 ```sh
-chmod +x activate_venv.sh
+chmod +x activate.sh
 ```
 
 ## Executable creation
