@@ -27,7 +27,7 @@ repos:
           - flake8-comprehensions
           - flake8-print
           - darglint
-        args: ["--ignore=DAR102"]
+        args: ["--ignore=DAR102,E501"]
   - repo: https://github.com/hadialqattan/pycln
     rev: 'v2.4.0'
     hooks:

@@ -1,0 +1,21 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f0f0f0;
+}
+#board {
+    margin: 20px auto;
+    width: 480px;
+}
+#status {
+    margin-top: 20px;
+    font-weight: bold;
+}
+/* Customize the board colors to resemble a common scheme */
+.white-1e1d7 {
+    background-color: #f0d9b5; /* light squares */
+}
+.black-3c85d {
+    background-color: #b58863; /* dark squares */
+}
+
