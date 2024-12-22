@@ -13,8 +13,8 @@ create_venv:
 	@echo "Virtual environment created in $(VENV_DIR)."
 
 install_reqs:
-	$(VENV_DIR)/bin/python3 -m pip install --proxy=http://proxy-chain.intel.com:912 --trusted-host=files.pythonhosted.org --trusted-host=pypi.org --trusted-host=pypi.python.org --upgrade pip
-	$(VENV_DIR)/bin/python3 -m pip install --proxy=http://proxy-chain.intel.com:912 --trusted-host=files.pythonhosted.org --trusted-host=pypi.org --trusted-host=pypi.python.org -r requirements.txt
+	$(VENV_DIR)/bin/python3 -m pip install --upgrade pip
+	$(VENV_DIR)/bin/python3 -m pip install -r requirements.txt
 	@echo "Installing requirements in virtual environment."
 	$(VENV_DIR)/bin/pre-commit install
 	@echo "Pre-commit hooks installed."
