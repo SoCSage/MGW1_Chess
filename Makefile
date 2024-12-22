@@ -4,9 +4,9 @@ PYTHON := python3
 BINARY_NAME := chess
 
 # Targets
-.PHONY: all create_venv install_reqs build clean_build clean
+.PHONY: all create_venv install_reqs install_hooks build clean_build clean
 
-all: create_venv install_reqs
+all: create_venv install_reqs install_hooks
 
 create_venv:
 	$(PYTHON) -m venv $(VENV_DIR)
@@ -16,6 +16,8 @@ install_reqs:
 	$(VENV_DIR)/bin/python3 -m pip install --upgrade pip
 	$(VENV_DIR)/bin/python3 -m pip install -r requirements.txt
 	@echo "Installing requirements in virtual environment."
+
+install_hooks:
 	$(VENV_DIR)/bin/pre-commit install
 	@echo "Pre-commit hooks installed."
 	$(VENV_DIR)/bin/pre-commit autoupdate
