@@ -28,6 +28,12 @@
 
     <!-- Optional CSS -->
     <link rel="stylesheet" href="static/styles.css">
+
+    <!-- Socket.IO client library (served automatically by Flask-SocketIO): ISSUES; Hence, using CDN -->
+    <!--<script src="/socket.io/socket.io.js"></script>-->
+    <!-- load a socket.io v4 client from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+
   </head>
 
   <body>
@@ -110,6 +116,20 @@
 
           return 'snapback';
         }
+      });
+
+      // Connect to Socket.IO
+      const socket = io(location.origin, { path: '/socket.io' });
+
+      // Listen for "board_update" events from the server
+      socket.on('board_update', function(data) {
+        console.log("Received board_update from server:", data);
+        // data.fen, data.pgn, data.statusText
+        board.position(data.fen);
+        board.flip();
+        document.getElementById('fenSpan').innerText = data.fen;
+        document.getElementById('pgnSpan').innerText = data.pgn;
+        document.getElementById('status').innerText = data.statusText;
       });
 
       // Refresh the game status (FEN, PGN, etc.)

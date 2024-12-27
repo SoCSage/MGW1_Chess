@@ -7,8 +7,14 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask_cors import CORS
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = "someSecretKey"
+socketio = SocketIO(app)
+cors = CORS(app)
+socketio.init_app(app, cors_allowed_origins="*")
 board = chess.Board()
 
 
@@ -112,6 +118,11 @@ def make_move():
 
     if move in board.legal_moves:
         board.push(move)
+        socketio.emit(
+            "board_update",
+            {"fen": board.fen(), "pgn": current_pgn(), "statusText": status_text()},
+            to=None,
+        )
         return jsonify({"status": "ok", "fen": board.fen()})
     else:
         return jsonify({"status": "error", "message": "Illegal move."})
@@ -146,6 +157,12 @@ def reset():
         with the initial state of the chess board.
     """
     board.reset()
+    # Broadcast reset to all
+    socketio.emit(
+        "board_update",
+        {"fen": board.fen(), "pgn": current_pgn(), "statusText": status_text()},
+        to=None,
+    )
     return redirect(url_for("index"))
 
 
@@ -166,4 +183,5 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    # app.run(debug=True, host="0.0.0.0")
+    socketio.run(app, debug=True, host="0.0.0.0")
