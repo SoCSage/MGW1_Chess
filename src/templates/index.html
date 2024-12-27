@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <title>Office Chess</title>
 
+     <!-- Google Fonts (optional) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    >
+
     <!-- Chessboard2 CSS (CDN) -->
     <link
       rel="stylesheet"
@@ -37,119 +45,123 @@
   </head>
 
   <body>
-    <h1>Office Chess</h1>
+    <div class="container">
 
-    <!-- Chessboard2 container -->
-    <div id="myBoard"></div>
+      <h1>Office Chess</h1>
 
-    <div id="status"></div>
-    <div>FEN: <span id="fenSpan"></span></div>
-    <div>PGN: <span id="pgnSpan"></span></div>
+      <div id="myBoard"></div>
+      <div id="status"></div>
 
-    <button onclick="resetGame()">Reset Game</button>
+      <div class="info-box">
+        <div>FEN: <span id="fenSpan"></span></div>
+        <div>PGN: <span id="pgnSpan"></span></div>
+      </div>
 
-    <script>
-      // Pull initial FEN from the server-side template variable
-      const initialFen = "{{ fen }}";
+      <button onclick="resetGame()">Reset Game</button>
 
-      // Initialize the Chessboard2
-      const board = Chessboard2('myBoard', {
-        position: initialFen,
-        draggable: true,
-        dropOffBoard: 'snapback',
-        pieceTheme: 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/img/chesspieces/wikipedia/{piece}.png',
+      <script>
+        // Pull initial FEN from the server-side template variable
+        const initialFen = "{{ fen }}";
 
-        // ================================
-        //  onDragStart: highlight moves
-        // ================================
-        onDragStart: function(dragData) {
-          // Clear any old circles
-          board.clearCircles();
+        // Initialize the Chessboard2
+        const board = Chessboard2('myBoard', {
+          position: initialFen,
+          draggable: true,
+          dropOffBoard: 'snapback',
+          pieceTheme: 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/img/chesspieces/wikipedia/{piece}.png',
 
-          // Extract square & piece from dragData
-          let fromSquare = dragData.square;
-          let piece = dragData.piece;
-          console.log(`Dragging piece ${piece} from square ${fromSquare}`);
+          // ================================
+          //  onDragStart: highlight moves
+          // ================================
+          onDragStart: function(dragData) {
+            // Clear any old circles
+            board.clearCircles();
 
-          // If there's no valid square or piece, bail out
-          if (!fromSquare || !piece) return;
+            // Extract square & piece from dragData
+            let fromSquare = dragData.square;
+            let piece = dragData.piece;
+            console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
-          // Ask the server for all possible destination squares
-          $.post('/legal_moves', { square: fromSquare }, function(res) {
-            if (res && res.moves) {
-              console.log(`Server responded with moves:`, res.moves);
-              // Add circles for each valid destination
-              res.moves.forEach(destSquare => {
-                board.addCircle(destSquare);  // default circle
-              });
-            } else {
-              console.log('No moves returned from /legal_moves');
-            }
-          }).fail(function() {
-            console.error('Failed to retrieve legal moves from server');
-          });
-        },
+            // If there's no valid square or piece, bail out
+            if (!fromSquare || !piece) return;
 
-        // ================================
-        //  onDrop: make the move
-        // ================================
-        onDrop: function(dropData) {
-          // Remove circles
-          board.clearCircles();
+            // Ask the server for all possible destination squares
+            $.post('/legal_moves', { square: fromSquare }, function(res) {
+              if (res && res.moves) {
+                console.log(`Server responded with moves:`, res.moves);
+                // Add circles for each valid destination
+                res.moves.forEach(destSquare => {
+                  board.addCircle(destSquare);  // default circle
+                });
+              } else {
+                console.log('No moves returned from /legal_moves');
+              }
+            }).fail(function() {
+              console.error('Failed to retrieve legal moves from server');
+            });
+          },
 
-          // Build a UCI-like string, e.g. "e2e4"
-          let moveStr = dropData.source + dropData.target;
+          // ================================
+          //  onDrop: make the move
+          // ================================
+          onDrop: function(dropData) {
+            // Remove circles
+            board.clearCircles();
 
-          $.post('/make_move', { move: moveStr }, function(data) {
-            if (data.status === 'ok') {
-              board.position(data.fen);
-              updateStatus();
-            } else {
-              // If server says illegal or error => revert
+            // Build a UCI-like string, e.g. "e2e4"
+            let moveStr = dropData.source + dropData.target;
+
+            $.post('/make_move', { move: moveStr }, function(data) {
+              if (data.status === 'ok') {
+                board.position(data.fen);
+                updateStatus();
+              } else {
+                // If server says illegal or error => revert
+                board.position(dropData.oldPos);
+                document.getElementById('status').innerText = data.message;
+              }
+            }).fail(function() {
               board.position(dropData.oldPos);
-              document.getElementById('status').innerText = data.message;
-            }
-          }).fail(function() {
-            board.position(dropData.oldPos);
-            document.getElementById('status').innerText = "Server error, move not processed.";
-          });
+              document.getElementById('status').innerText = "Server error, move not processed.";
+            });
 
-          return 'snapback';
-        }
-      });
-
-      // Connect to Socket.IO
-      const socket = io(location.origin, { path: '/socket.io' });
-
-      // Listen for "board_update" events from the server
-      socket.on('board_update', function(data) {
-        console.log("Received board_update from server:", data);
-        // data.fen, data.pgn, data.statusText
-        board.position(data.fen);
-        board.flip();
-        document.getElementById('fenSpan').innerText = data.fen;
-        document.getElementById('pgnSpan').innerText = data.pgn;
-        document.getElementById('status').innerText = data.statusText;
-      });
-
-      // Refresh the game status (FEN, PGN, etc.)
-      function updateStatus() {
-        $.get('/game_status', function(data) {
-          if (data) {
-            document.getElementById('status').innerText = data.statusText;
-            document.getElementById('fenSpan').innerText = data.fen;
-            document.getElementById('pgnSpan').innerText = data.pgn;
+            return 'snapback';
           }
         });
-      }
 
-      // Reset the board (call server /reset)
-      function resetGame() {
-        window.location.href = "/reset";
-      }
+        // Connect to Socket.IO
+        const socket = io(location.origin, { path: '/socket.io' });
 
-      // On page load, get initial status
-      updateStatus();
-    </script>
+        // Listen for "board_update" events from the server
+        socket.on('board_update', function(data) {
+          console.log("Received board_update from server:", data);
+          // data.fen, data.pgn, data.statusText
+          board.position(data.fen);
+          board.flip();
+          document.getElementById('fenSpan').innerText = data.fen;
+          document.getElementById('pgnSpan').innerText = data.pgn;
+          document.getElementById('status').innerText = data.statusText;
+        });
+
+        // Refresh the game status (FEN, PGN, etc.)
+        function updateStatus() {
+          $.get('/game_status', function(data) {
+            if (data) {
+              document.getElementById('status').innerText = data.statusText;
+              document.getElementById('fenSpan').innerText = data.fen;
+              document.getElementById('pgnSpan').innerText = data.pgn;
+            }
+          });
+        }
+
+        // Reset the board (call server /reset)
+        function resetGame() {
+          window.location.href = "/reset";
+        }
+
+        // On page load, get initial status
+        updateStatus();
+      </script>
+    </div>
   </body>
 </html>
