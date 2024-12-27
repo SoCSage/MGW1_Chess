@@ -3,7 +3,7 @@ body {
     margin: 20px;
     background: #f0f0f0;
 }
-#board {
+#myBoard {
     margin: 20px auto;
     width: 480px;
 }
