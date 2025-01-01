@@ -1,21 +1,108 @@
+/*
+  Better CSS for your Office Chess interface
+  ------------------------------------------
+  - Adds a clean, centered layout container
+  - Modern font (Open Sans, fallback to sans-serif)
+  - Stylish button with hover effect
+  - Subtle box-shadow around the chessboard
+  - Clearer status styling
+*/
+
+/* Import a modern webfont (optional). This example uses Google Fonts for "Open Sans".
+   You can include this in your <head>:
+
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+*/
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f0f0f0;
+  margin: 0;
+  padding: 0;
+  background: #f8f9fa;
+  font-family: 'Open Sans', sans-serif;
+  color: #333;
 }
-#board {
-    margin: 20px auto;
-    width: 480px;
+
+.container {
+  max-width: 960px; /* control the maximum width of your content */
+  margin: 0 auto;
+  padding: 20px;
 }
+
+/* Page Title */
+h1 {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Chessboard Container */
+#myBoard {
+  margin: 20px auto;
+  width: 480px;
+  border: 2px solid #ccc;               /* subtle border around the board */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1); /* soft shadow to make the board "pop" */
+}
+
+/* Status text */
 #status {
-    margin-top: 20px;
-    font-weight: bold;
+  margin-top: 20px;
+  font-weight: 600; /* slightly bolder for better visibility */
+  text-align: center;
+  color: #444;
 }
-/* Customize the board colors to resemble a common scheme */
+
+/* FEN, PGN labels */
+#fenSpan,
+#pgnSpan {
+  font-weight: 600;
+  color: #555;
+}
+
+/* Button styling */
+button {
+  display: block;
+  margin: 25px auto;
+  padding: 10px 20px;
+  background: #007bff;   /* classic bootstrap blue */
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+button:hover {
+  background: #0056b3;  /* darker blue on hover */
+}
+
+/* Customize the light and dark squares */
 .white-1e1d7 {
-    background-color: #f0d9b5; /* light squares */
+  background-color: #f0d9b5 !important; /* lighter squares */
 }
+
 .black-3c85d {
-    background-color: #b58863; /* dark squares */
+  background-color: #b58863 !important; /* darker squares */
 }
+
+/* Optionally, you could add a small hover effect on the squares
+   if you'd like them to highlight when mousing over:
+   (Chessboard2’s default square class is .square-55d63, but confirm in your setup.)
+
+.square-55d63:hover {
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 0, 0.4);
+  cursor: pointer;
+}
+*/
+
+/* If you want to group or style FEN/PGN info more neatly,
+   wrap them in a container, for example .info-box, and style it:
+
+.info-box {
+  text-align: center;
+  margin-top: 10px;
+}
+*/
 

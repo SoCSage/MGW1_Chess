@@ -1,60 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
-   <head>
-      <meta charset="UTF-8"/>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-      <title>Office Chess</title>
-      <link rel="stylesheet"
-         href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"
-         integrity="sha384-q94+BZtLrkL1/ohfjR8c6L+A6qzNH9R2hBLwyoAfu3i/WCvQjzL2RQJ3uNHDISdU"
-         crossorigin="anonymous">
-      <link rel="stylesheet" href="static/styles.css">
-      <!-- Link to your external CSS file -->
-      <script src="https://code.jquery.com/jquery-3.5.1.min.js"
-         integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2"
-         crossorigin="anonymous"></script>
-      <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"
-         integrity="sha384-8Vi8VHwn3vjQ9eUHUxex3JSN/NFqUg3QbPyX8kWyb93+8AC/pPWTzj+nHtbC5bxD"
-         crossorigin="anonymous"></script>
-   </head>
-   <body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Office Chess</title>
+
+     <!-- Google Fonts (optional) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    >
+
+    <!-- Chessboard2 CSS (CDN) -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@chrisoakman/chessboard2@0.5.0/dist/chessboard2.min.css"
+      integrity="sha384-47VeTDpmy4yT21gKPXQcLQYQZwlmz27gEH5NTrOmTk3G/SGvMyltclOW/Q8uE+sL"
+      crossorigin="anonymous"
+    />
+
+    <!-- jQuery (CDN) -->
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.min.js"
+      integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Chessboard2 JavaScript (CDN) -->
+    <script
+      src="https://unpkg.com/@chrisoakman/chessboard2@0.5.0/dist/chessboard2.min.js"
+      integrity="sha384-/KwQCjA1GWovZNV3QDVtvSMDzO4reGgarF/RqHipr7hIUElH3r5zNl9WEPPOBRIF"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Optional CSS -->
+    <link rel="stylesheet" href="static/styles.css">
+
+    <!-- Socket.IO client library (served automatically by Flask-SocketIO): ISSUES; Hence, using CDN -->
+    <!--<script src="/socket.io/socket.io.js"></script>-->
+    <!-- load a socket.io v4 client from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+
+  </head>
+
+  <body>
+    <div class="container">
+
       <h1>Office Chess</h1>
-      <div id="board"></div>
+
+      <div id="myBoard"></div>
       <div id="status"></div>
+
+      <div class="info-box">
+        <div>FEN: <span id="fenSpan"></span></div>
+        <div>PGN: <span id="pgnSpan"></span></div>
+      </div>
+
       <button onclick="resetGame()">Reset Game</button>
+
       <script>
-         var board = null;
-         var fen = "{{ fen }}";
+        // Pull initial FEN from the server-side template variable
+        const initialFen = "{{ fen }}";
 
-         board = Chessboard('board', {
-             position: fen,
-             draggable: true,
-             pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
-             onDrop: onDrop
-         });
+        // Initialize the Chessboard2
+        const board = Chessboard2('myBoard', {
+          position: initialFen,
+          draggable: true,
+          dropOffBoard: 'snapback',
+          pieceTheme: 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/img/chesspieces/wikipedia/{piece}.png',
 
-         function onDrop(source, target, piece, newPos, oldPos, orientation) {
-             var move = source + target;
+          // ================================
+          //  onDragStart: highlight moves
+          // ================================
+          onDragStart: function(dragData) {
+            // Clear any old circles
+            board.clearCircles();
 
-             $.post("/make_move", { move: move }, function(data) {
-                 if (data.status === "ok") {
-                     board.position(data.fen);
-                     $("#status").text("Move made: " + move);
-                 } else {
-                     $("#status").text(data.message);
-                     board.position(oldPos);
-                 }
-             }).fail(function() {
-                 $("#status").text("Server error, move not processed.");
-                 board.position(oldPos);
-             });
+            // Extract square & piece from dragData
+            let fromSquare = dragData.square;
+            let piece = dragData.piece;
+            console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
-             return 'snapback';
-         }
+            // If there's no valid square or piece, bail out
+            if (!fromSquare || !piece) return;
 
-         function resetGame() {
-             window.location.href = "/reset";
-         }
+            // Ask the server for all possible destination squares
+            $.post('/legal_moves', { square: fromSquare }, function(res) {
+              if (res && res.moves) {
+                console.log(`Server responded with moves:`, res.moves);
+                // Add circles for each valid destination
+                res.moves.forEach(destSquare => {
+                  board.addCircle(destSquare);  // default circle
+                });
+              } else {
+                console.log('No moves returned from /legal_moves');
+              }
+            }).fail(function() {
+              console.error('Failed to retrieve legal moves from server');
+            });
+          },
+
+          // ================================
+          //  onDrop: make the move
+          // ================================
+          onDrop: function(dropData) {
+            // Remove circles
+            board.clearCircles();
+
+            // Build a UCI-like string, e.g. "e2e4"
+            let moveStr = dropData.source + dropData.target;
+
+            $.post('/make_move', { move: moveStr }, function(data) {
+              if (data.status === 'ok') {
+                board.position(data.fen);
+                updateStatus();
+              } else {
+                // If server says illegal or error => revert
+                board.position(dropData.oldPos);
+                document.getElementById('status').innerText = data.message;
+              }
+            }).fail(function() {
+              board.position(dropData.oldPos);
+              document.getElementById('status').innerText = "Server error, move not processed.";
+            });
+
+            return 'snapback';
+          }
+        });
+
+        // Connect to Socket.IO
+        const socket = io(location.origin, { path: '/socket.io' });
+
+        // Listen for "board_update" events from the server
+        socket.on('board_update', function(data) {
+          console.log("Received board_update from server:", data);
+          // data.fen, data.pgn, data.statusText
+          board.position(data.fen);
+          board.flip();
+          document.getElementById('fenSpan').innerText = data.fen;
+          document.getElementById('pgnSpan').innerText = data.pgn;
+          document.getElementById('status').innerText = data.statusText;
+        });
+
+        // Refresh the game status (FEN, PGN, etc.)
+        function updateStatus() {
+          $.get('/game_status', function(data) {
+            if (data) {
+              document.getElementById('status').innerText = data.statusText;
+              document.getElementById('fenSpan').innerText = data.fen;
+              document.getElementById('pgnSpan').innerText = data.pgn;
+            }
+          });
+        }
+
+        // Reset the board (call server /reset)
+        function resetGame() {
+          window.location.href = "/reset";
+        }
+
+        // On page load, get initial status
+        updateStatus();
       </script>
-   </body>
+    </div>
+  </body>
 </html>
