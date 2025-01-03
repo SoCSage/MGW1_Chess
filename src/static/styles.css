@@ -37,6 +37,12 @@ h1 {
   color: #333;
 }
 
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
 /* Chessboard Container */
 #myBoard {
   margin: 20px auto;

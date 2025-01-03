@@ -3,19 +3,24 @@ from datetime import datetime
 import chess.pgn
 from flask import Flask
 from flask import jsonify
+from flask import make_response
 from flask import redirect
 from flask import render_template
 from flask import request
+from flask import session
 from flask import url_for
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from modules import login
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "someSecretKey"
 socketio = SocketIO(app)
 cors = CORS(app)
 socketio.init_app(app, cors_allowed_origins="*")
+
 board = chess.Board()
+move_owners = []
 
 
 def current_pgn():
@@ -39,8 +44,11 @@ def current_pgn():
     game.headers["Result"] = board.result()
 
     node = game
-    for mv in board.move_stack:
+    for i, mv in enumerate(board.move_stack):
         node = node.add_variation(mv)
+
+        if i < len(move_owners):
+            node.comment = f"Move made by {move_owners[i]}"
     return str(game)
 
 
@@ -118,6 +126,10 @@ def make_move():
 
     if move in board.legal_moves:
         board.push(move)
+        name_in_cookie = login.get_username_cookie()
+        if not name_in_cookie:
+            name_in_cookie = "Anonymous"
+        move_owners.append(name_in_cookie)
         socketio.emit(
             "board_update",
             {"fen": board.fen(), "pgn": current_pgn(), "statusText": status_text()},
@@ -157,6 +169,7 @@ def reset():
         with the initial state of the chess board.
     """
     board.reset()
+    move_owners.clear()
     # Broadcast reset to all
     socketio.emit(
         "board_update",
@@ -166,10 +179,11 @@ def reset():
     return redirect(url_for("index"))
 
 
-@app.route("/")
+@app.route("/", methods=["POST", "GET"])
 def index():
     """
-    Render the main chessboard page with the current board position (FEN).
+    Prompt the user for registering with their name.
+    Then, render the main chessboard page with the current board position (FEN).
 
     Parameters:
         argument1 (none): No arguments
@@ -177,11 +191,29 @@ def index():
     Returns:
         Response: The rendered HTML page containing the chessboard.
     """
-
+    session.clear()
+    name_in_cookie = login.get_username_cookie()
     fen = board.fen()
-    return render_template("index.html", fen=fen)
+
+    if request.method == "GET":
+        if name_in_cookie:
+            return render_template("index.html", fen=fen, name=name_in_cookie)
+        else:
+            return render_template("login.html")
+
+    if request.method == "POST":
+        name = request.form.get("name")
+
+        if not name:
+            return render_template("login.html", error="Please enter a name.")
+
+        resp = make_response(render_template("index.html", fen=fen, name=name))
+        login.set_username_cookie(resp, name)
+        return resp
+
+    # Fallback (should not reach here)
+    return "Something unexpected happened", 400
 
 
 if __name__ == "__main__":
-    # app.run(debug=True, host="0.0.0.0")
-    socketio.run(app, debug=True, host="0.0.0.0", allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, host="0.0.0.0")

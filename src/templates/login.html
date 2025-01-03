@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container">
+  <h2>Office Chess</h2>
+
+  <!--<div class="tabs">-->
+    <!--<button class="tab-button active" data-tab="join">Join</button>-->
+    <!--<button class="tab-button" data-tab="create">Register</button>-->
+  <!--</div>-->
+
+  <form method="post" id="joinForm" class="tab-content active">
+    <h3>Join Game</h3>
+    <div class="form-group">
+      <label for="join-name">Name:</label>
+      <input type="text" id="join-name" placeholder="Enter your name" name="name" value="{{name}}" required>
+    </div>
+    <button type="submit" name="join" class="btn btn-primary">Join Game</button>
+  </form>
+
+  <!--<form method="post" id="createForm" class="tab-content">-->
+  <!--  <h3>Register for Games</h3>-->
+  <!--  <div class="form-group">-->
+  <!--    <label for="create-name">Name:</label>-->
+  <!--    <input type="text" id="create-name" placeholder="Enter your name" name="name" value="{{name}}" required>-->
+  <!--  </div>-->
+  <!--  <button type="submit" name="create" class="btn btn-secondary">Register & Join</button>-->
+  <!--</form>-->
+
+  {% if error %}
+  <div class="error-message">
+    <p>{{error}}</p>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  .container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 50px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .tabs {
+    display: flex;
+    margin-bottom: 30px;
+  }
+
+  .tab-button {
+    flex: 1;
+    padding: 20px;
+    background-color: #e9ecef;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .tab-button.active {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #ced4da;
+    border-radius: 4px;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: background-color 0.3s;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #545b62;
+  }
+
+  .error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 20px;
+  }
+</style>
+
+<!--<script>-->
+<!--  document.addEventListener('DOMContentLoaded', function() {-->
+<!--    const tabs = document.querySelectorAll('.tab-button');-->
+<!--    const contents = document.querySelectorAll('.tab-content');-->
+<!---->
+<!--    tabs.forEach(tab => {-->
+<!--      tab.addEventListener('click', () => {-->
+<!--        const target = tab.dataset.tab;-->
+<!---->
+<!--        tabs.forEach(t => t.classList.remove('active'));-->
+<!--        contents.forEach(c => c.classList.remove('active'));-->
+<!---->
+<!--        tab.classList.add('active');-->
+<!--        document.getElementById(target + 'Form').classList.add('active');-->
+<!--      });-->
+<!--    });-->
+<!--  });-->
+<!--</script>-->
+
+{% endblock %}
