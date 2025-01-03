@@ -11,6 +11,7 @@ from flask import session
 from flask import url_for
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from modules import helper
 from modules import login
 
 app = Flask(__name__)
@@ -21,6 +22,7 @@ socketio.init_app(app, cors_allowed_origins="*")
 
 board = chess.Board()
 move_owners = []
+manager = helper.OrientationManager()
 
 
 def current_pgn():
@@ -130,12 +132,24 @@ def make_move():
         if not name_in_cookie:
             name_in_cookie = "Anonymous"
         move_owners.append(name_in_cookie)
+        manager.toggle_orientation()
         socketio.emit(
             "board_update",
-            {"fen": board.fen(), "pgn": current_pgn(), "statusText": status_text()},
+            {
+                "fen": board.fen(),
+                "pgn": current_pgn(),
+                "statusText": status_text(),
+                "orientation": manager.get_orientation(),
+            },
             to=None,
         )
-        return jsonify({"status": "ok", "fen": board.fen()})
+        return jsonify(
+            {
+                "status": "ok",
+                "fen": board.fen(),
+                "orientation": manager.get_orientation(),
+            }
+        )
     else:
         return jsonify({"status": "error", "message": "Illegal move."})
 
@@ -152,7 +166,12 @@ def game_status():
         Returns the details in JSON format
     """
     return jsonify(
-        {"fen": board.fen(), "pgn": current_pgn(), "statusText": status_text()}
+        {
+            "fen": board.fen(),
+            "pgn": current_pgn(),
+            "statusText": status_text(),
+            "orientation": manager.get_orientation(),
+        }
     )
 
 
@@ -170,10 +189,16 @@ def reset():
     """
     board.reset()
     move_owners.clear()
+    manager.reset_orientation()
     # Broadcast reset to all
     socketio.emit(
         "board_update",
-        {"fen": board.fen(), "pgn": current_pgn(), "statusText": status_text()},
+        {
+            "fen": board.fen(),
+            "pgn": current_pgn(),
+            "statusText": status_text(),
+            "orientation": manager.get_orientation(),
+        },
         to=None,
     )
     return redirect(url_for("index"))

@@ -94,12 +94,8 @@
         if (board) {
           board.position(data.fen);
         }
-        document.getElementById('fenSpan').innerText = data.fen;
-        document.getElementById('pgnSpan').innerText = data.pgn;
-        document.getElementById('status').innerText = data.statusText;
+        updateStatus();
       });
-
-      let isFlipped = false;
 
       // Refresh the game status (FEN, PGN, etc.)
       function updateStatus() {
@@ -110,12 +106,9 @@
             document.getElementById('pgnSpan').innerText = data.pgn;
           }
           if (board) {
-            if (!isFlipped) {
-              const newOrientation = board.flip()
-              isFlipped = true;
-            }
-            const newOrientation2 = board.flip()
-            console.log('New board orientation is:', newOrientation2)
+            const newOrientation = board.orientation(data.orientation)
+            console.log('New board orientation is:', newOrientation)
+            console.log('New board orientation is:', data.orientation)
           }
         });
       }
