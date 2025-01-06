@@ -1,69 +1,88 @@
-/*
-  Better CSS for your Office Chess interface
-  ------------------------------------------
-  - Adds a clean, centered layout container
-  - Modern font (Open Sans, fallback to sans-serif)
-  - Stylish button with hover effect
-  - Subtle box-shadow around the chessboard
-  - Clearer status styling
-*/
-
-/* Import a modern webfont (optional). This example uses Google Fonts for "Open Sans".
-   You can include this in your <head>:
-
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-*/
+/* General body styling */
 body {
   margin: 0;
   padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
   background: #f8f9fa;
   font-family: 'Open Sans', sans-serif;
   color: #333;
 }
 
+/* Central container for layout */
 .container {
-  max-width: 960px; /* control the maximum width of your content */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Page Title */
-h1 {
+/* Page title styling */
+h1, h2 {
   text-align: center;
-  margin-top: 40px;
+  color: #333;
   margin-bottom: 20px;
-  color: #333;
 }
 
-h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 30px;
+h1 {
+  margin-top: 40px;
 }
 
-/* Chessboard Container */
+/* Chessboard container */
 #myBoard {
-  margin: 20px auto;
-  width: 480px;
-  border: 2px solid #ccc;               /* subtle border around the board */
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1); /* soft shadow to make the board "pop" */
+  margin: 20px;
+  width: 600px;
+  border: 2px solid #ccc;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Status text */
-#status {
-  margin-top: 20px;
-  font-weight: 600; /* slightly bolder for better visibility */
-  text-align: center;
-  color: #444;
+/* Game and info container layout */
+.game-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
-/* FEN, PGN labels */
-#fenSpan,
-#pgnSpan {
-  font-weight: 600;
-  color: #555;
+/* Info box styling */
+.info-box {
+  flex: 1 1 400px; /* Flexible width with a minimum size */
+  padding: 20px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Data table styling */
+#pgnTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#pgnTable thead th {
+  background-color: #444;
+  color: #fff;
+  font-weight: bold;
+  text-align: left;
+  padding: 8px;
+}
+
+#pgnTable tbody td {
+  font-family: 'Courier New', Courier, monospace;
+  padding: 8px;
+  border: 1px solid #ddd;
 }
 
 /* Button styling */
@@ -71,7 +90,7 @@ button {
   display: block;
   margin: 25px auto;
   padding: 10px 20px;
-  background: #007bff;   /* classic bootstrap blue */
+  background: #007bff;
   border: none;
   border-radius: 4px;
   color: #fff;
@@ -81,34 +100,33 @@ button {
 }
 
 button:hover {
-  background: #0056b3;  /* darker blue on hover */
+  background: #0056b3;
 }
 
-/* Customize the light and dark squares */
+/* Square coloring and hover effect */
 .white-1e1d7 {
-  background-color: #f0d9b5 !important; /* lighter squares */
+  background-color: #f0d9b5 !important;
 }
 
 .black-3c85d {
-  background-color: #b58863 !important; /* darker squares */
+  background-color: #b58863 !important;
 }
-
-/* Optionally, you could add a small hover effect on the squares
-   if you'd like them to highlight when mousing over:
-   (Chessboard2’s default square class is .square-55d63, but confirm in your setup.)
 
 .square-55d63:hover {
   box-shadow: inset 0 0 0 3px rgba(255, 255, 0, 0.4);
   cursor: pointer;
 }
-*/
 
-/* If you want to group or style FEN/PGN info more neatly,
-   wrap them in a container, for example .info-box, and style it:
+/* Responsive layout adjustments */
+@media (max-width: 768px) {
+  .game-container {
+    flex-direction: column;
+    align-items: center;
+  }
 
-.info-box {
-  text-align: center;
-  margin-top: 10px;
+  #myBoard {
+    width: 90%; /* Shrink the board for smaller screens */
+    margin: 20px auto; /* Center the chessboard */
+    display: block; /* Ensure centering */
+  }
 }
-*/
-

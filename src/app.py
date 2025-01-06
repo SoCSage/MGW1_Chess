@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import chess.pgn
 from flask import Flask
 from flask import jsonify
@@ -23,62 +21,7 @@ socketio.init_app(app, cors_allowed_origins="*")
 board = chess.Board()
 move_owners = []
 manager = helper.OrientationManager()
-
-
-def current_pgn():
-    """
-    Generate PGN from the move stack, with the result if the game has ended.
-
-    Parameters:
-        argument1 (none): No arguments
-
-    Returns:
-        str: The PGN string representing the moves and headers of the current game.
-    """
-
-    game = chess.pgn.Game()
-    game.headers["Event"] = "Office Chess"
-    game.headers["Site"] = "Office"
-    game.headers["Date"] = datetime.now().strftime("%Y.%m.%d")
-    game.headers["Round"] = "1"
-    game.headers["White"] = "White"
-    game.headers["Black"] = "Black"
-    game.headers["Result"] = board.result()
-
-    node = game
-    for i, mv in enumerate(board.move_stack):
-        node = node.add_variation(mv)
-
-        if i < len(move_owners):
-            node.comment = f"Move made by {move_owners[i]}"
-    return str(game)
-
-
-def status_text():
-    """
-    Provide a human-readable game status, indicating whose turn it is or if the game is over.
-
-    Parameters:
-        argument1 (none): No arguments
-
-    Returns:
-        str: The status text, for example "White to move" or "Checkmate! White wins!"
-    """
-
-    if board.is_game_over():
-        r = board.result()
-        if r == "1-0":
-            return "Checkmate! White wins!"
-        if r == "0-1":
-            return "Checkmate! Black wins!"
-        if r == "1/2-1/2":
-            return "Game over. Draw!"
-        return "Game over."
-    else:
-        turn_str = "White" if board.turn == chess.WHITE else "Black"
-        if board.is_check():
-            return f"{turn_str} to move, and they're in check!"
-        return f"{turn_str} to move."
+tracker = helper.PGN_Tracker()
 
 
 @app.route("/legal_moves", methods=["POST"])
@@ -132,14 +75,16 @@ def make_move():
         if not name_in_cookie:
             name_in_cookie = "Anonymous"
         move_owners.append(name_in_cookie)
+        tracker.update_moves_list(board, move_owners, manager.get_orientation())
         manager.toggle_orientation()
         socketio.emit(
             "board_update",
             {
                 "fen": board.fen(),
-                "pgn": current_pgn(),
-                "statusText": status_text(),
+                "pgn": helper.current_pgn(board, move_owners),
+                "statusText": helper.status_text(board),
                 "orientation": manager.get_orientation(),
+                "moves": tracker.get_moves_list(),
             },
             to=None,
         )
@@ -148,6 +93,7 @@ def make_move():
                 "status": "ok",
                 "fen": board.fen(),
                 "orientation": manager.get_orientation(),
+                "moves": tracker.get_moves_list(),
             }
         )
     else:
@@ -168,9 +114,10 @@ def game_status():
     return jsonify(
         {
             "fen": board.fen(),
-            "pgn": current_pgn(),
-            "statusText": status_text(),
+            "pgn": helper.current_pgn(board, move_owners),
+            "statusText": helper.status_text(board),
             "orientation": manager.get_orientation(),
+            "moves": tracker.get_moves_list(),
         }
     )
 
@@ -189,14 +136,14 @@ def reset():
     """
     board.reset()
     move_owners.clear()
+    tracker.reset()
     manager.reset_orientation()
-    # Broadcast reset to all
     socketio.emit(
         "board_update",
         {
             "fen": board.fen(),
-            "pgn": current_pgn(),
-            "statusText": status_text(),
+            "pgn": helper.current_pgn(board, move_owners),
+            "statusText": helper.status_text(board),
             "orientation": manager.get_orientation(),
         },
         to=None,
@@ -236,7 +183,6 @@ def index():
         login.set_username_cookie(resp, name)
         return resp
 
-    # Fallback (should not reach here)
     return "Something unexpected happened", 400
 
 
