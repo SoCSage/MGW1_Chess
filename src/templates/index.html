@@ -2,18 +2,33 @@
 {% block content %}
   <div class="container">
 
-    <h1>Office Chess</h1>
-    <h2>Welcome {{ name }}!</h2>
+    <!--<div class="info-box">-->
+    <!--  <div>FEN: <span id="fenSpan"></span></div>-->
+    <!--  <div>PGN: <span id="pgnSpan"></span></div>-->
+    <!--</div>-->
 
-    <div id="myBoard"></div>
-    <div id="status"></div>
-
-    <div class="info-box">
-      <div>FEN: <span id="fenSpan"></span></div>
-      <div>PGN: <span id="pgnSpan"></span></div>
+    <div class="game-container">
+      <div id="myBoard"></div>
+      <div class="info-box">
+        <h1>Office Chess: Welcome, {{ name }}!</h1>
+        <div id="status"></div>
+        <table id="pgnTable" class="display compact" cellspacing="0" width="100%">
+          <thead>
+            <tr>
+              <th>Move #</th>
+              <th>White Move</th>
+              <th>White User</th>
+              <th>Black Move</th>
+              <th>Black User</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rows will be dynamically added -->
+          </tbody>
+        </table>
+        <button onclick="resetGame()">Reset Game</button>
+      </div>
     </div>
-
-    <button onclick="resetGame()">Reset Game</button>
 
     <script>
       // Pull initial FEN from the server-side template variable
@@ -102,16 +117,40 @@
         $.get('/game_status', function(data) {
           if (data) {
             document.getElementById('status').innerText = data.statusText;
-            document.getElementById('fenSpan').innerText = data.fen;
-            document.getElementById('pgnSpan').innerText = data.pgn;
+            <!--document.getElementById('fenSpan').innerText = data.fen;-->
+            <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
+            const table = $('#pgnTable').DataTable();
+            table.clear(); // Clear existing data
+            data.moves.forEach(row => {
+              table.row.add([
+                row["Move #"],
+                row["White Move"],
+                row["White User"],
+                row["Black Move"],
+                row["Black User"]
+              ]);
+            });
+            table.draw();
           }
           if (board) {
             const newOrientation = board.orientation(data.orientation)
-            console.log('New board orientation is:', newOrientation)
-            console.log('New board orientation is:', data.orientation)
           }
         });
       }
+
+      $(document).ready(function() {
+        $('#pgnTable').DataTable({
+          paging: false,
+          searching: true,
+          info: false,
+          autoWidth: true,
+          columnDefs: [
+            { className: "dt-center", targets: "_all" }
+          ]
+        });
+
+        updateStatus();
+      });
 
       // Reset the board (call server /reset)
       function resetGame() {
