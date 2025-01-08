@@ -74,6 +74,24 @@
         'e8': { left: '37.5%', top: '87.5%' }, 'f8': { left: '25%', top: '87.5%' }, 'g8': { left: '12.5%', top: '87.5%' }, 'h8': { left: '0%', top: '87.5%' }
     };
 
+    // Function to find the piece element based on position
+    function findPieceElement(position) {
+      const pieces = document.querySelectorAll('.piece-349f8');
+      const targetLeft = position.left.replace('%', '');
+      const targetTop = position.top.replace('%', '');
+
+      for (let piece of pieces) {
+        const style = piece.style;
+        const left = style.left.replace('%', '');
+        const top = style.top.replace('%', '');
+
+        if (left === targetLeft && top === targetTop) {
+          return piece;
+        }
+      }
+      return null;
+    }
+
       // Initialize the Chessboard2
       const board = Chessboard2('myBoard', {
         position: initialFen,
@@ -96,16 +114,26 @@
           // If there's no valid square or piece, bail out
           if (!fromSquare || !piece) return;
 
+          // Fetch the game status to determine the board orientation
+          $.get('/game_status', function(data) {
             // Determine the piece color
             const pieceColor = piece.charAt(0) === 'w' ? 'white' : 'black';
 
-            // Use the appropriate mapping based on the piece color
-            const position = pieceColor === 'white' ? squareToPositionWhite[fromSquare] : squareToPositionBlack[fromSquare];
-            const pieceElement = document.querySelector(`.piece-349f8[style*="left:${position.left};top:${position.top}"]`);
-            console.log('pieceElement:', pieceElement); // Log the pieceElement to the console
-            if (pieceElement) {
-              pieceElement.style.opacity = 0.5;
+            // Check if the piece color matches the board orientation
+            if (pieceColor === data.orientation) {
+              // Use the appropriate mapping based on the piece color
+              const position = pieceColor === 'white' ? squareToPositionWhite[fromSquare] : squareToPositionBlack[fromSquare];
+
+              // Find the piece element based on its position
+              const pieceElement = findPieceElement(position);
+              console.log('pieceElement:', pieceElement); // Log the pieceElement to the console
+
+              // Make the piece element semi-transparent
+              if (pieceElement) {
+                pieceElement.style.opacity = 0.5;
+              }
             }
+          });
 
           // Ask the server for all possible destination squares
           $.post('/legal_moves', { square: fromSquare }, function(res) {
@@ -129,6 +157,9 @@
         onDrop: function(dropData) {
           // Remove circles
           board.clearCircles();
+
+          // Restore opacity for all pieces
+          document.querySelectorAll('.piece-349f8').forEach(piece => piece.style.opacity = 1);
 
           // Build a UCI-like string, e.g. "e2e4"
           let moveStr = dropData.source + dropData.target;
