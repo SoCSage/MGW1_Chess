@@ -53,18 +53,21 @@
       let moveOrientationColor;
       let squareElement;
 
+      let currentFEN;
+      let viewState = false;
+
       // ================================
       //  onDragStart: highlight moves
       // ================================
       function onDragStart (dragData) {
-        console.log(dragData)
         // Clear any old circles
         board.clearCircles();
+
+        if (viewState) return false
 
         // Extract square & piece from dragData
         let fromSquare = dragData.square;
         let piece = dragData.piece;
-        console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
         // only pick up pieces for the side to move
         if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false
@@ -79,7 +82,6 @@
         // Ask the server for all possible destination squares
         $.post('/legal_moves', { square: fromSquare }, function(res) {
           if (res && res.moves) {
-            console.log(`Server responded with moves:`, res.moves);
             // Add circles for each valid destination
             res.moves.forEach(destSquare => {
               board.addCircle(destSquare);  // default circle
@@ -98,6 +100,8 @@
       function onDrop (dropData) {
         // Remove circles
         board.clearCircles();
+
+        if (viewState) return false
 
         if (squareElement) {
           squareElement.style.opacity = "1.0";
@@ -128,7 +132,6 @@
 
       // Listen for "board_update" events from the server
       socket.on('board_update', function(data) {
-        console.log("Received board_update from server:", data);
         // data.fen, data.pgn, data.statusText
         if (board) {
           board.position(data.fen);
@@ -141,6 +144,7 @@
         $.get('/game_status', function(data) {
           if (data) {
             document.getElementById('status').innerText = data.statusText;
+            currentFEN = data.fen;
             <!--document.getElementById('fenSpan').innerText = data.fen;-->
             <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
             const table = $('#pgnTable').DataTable();
@@ -176,6 +180,17 @@
 
         updateStatus();
 
+        let currentCell = { row: 0, column: 1 };
+        const allowedColumns = [1, 3];
+
+        function focusCell(rowIdx, colIdx) {
+          let cell = table.cell(rowIdx, colIdx).node();
+          if (cell) {
+            $(cell).attr('tabindex', '-1').focus();
+          }
+        }
+
+        focusCell(currentCell.row, currentCell.column);
         $('#pgnTable tbody').on('click', 'td', function() {
           let cell = table.cell(this);
 
@@ -197,6 +212,11 @@
             .then(data => {
               let fenString = data.fen_string_value;
               board.fen(fenString);
+              if (currentFEN === fenString) {
+                viewState = false;
+              } else {
+                viewState = true;
+              }
             })
             .catch(error => {
               console.error('Error:', error);
