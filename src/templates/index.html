@@ -35,69 +35,93 @@
       const initialFen = "{{ fen }}";
 
       // Initialize the Chessboard2
-      const board = Chessboard2('myBoard', {
+      const boardConfig = {
+        sparePieces: true,
         position: initialFen,
         draggable: true,
         dropOffBoard: 'snapback',
         pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
+        onDragStart,
+        onDrop
+      }
 
-        // ================================
-        //  onDragStart: highlight moves
-        // ================================
-        onDragStart: function(dragData) {
-          // Clear any old circles
-          board.clearCircles();
+      const board = Chessboard2('myBoard', boardConfig)
 
-          // Extract square & piece from dragData
-          let fromSquare = dragData.square;
-          let piece = dragData.piece;
-          console.log(`Dragging piece ${piece} from square ${fromSquare}`);
+      function isWhitePiece (piece) { return /^w/.test(piece) }
+      function isBlackPiece (piece) { return /^b/.test(piece) }
 
-          // If there's no valid square or piece, bail out
-          if (!fromSquare || !piece) return;
+      let moveOrientationColor;
+      let squareElement;
 
-          // Ask the server for all possible destination squares
-          $.post('/legal_moves', { square: fromSquare }, function(res) {
-            if (res && res.moves) {
-              console.log(`Server responded with moves:`, res.moves);
-              // Add circles for each valid destination
-              res.moves.forEach(destSquare => {
-                board.addCircle(destSquare);  // default circle
-              });
-            } else {
-              console.log('No moves returned from /legal_moves');
-            }
-          }).fail(function() {
-            console.error('Failed to retrieve legal moves from server');
-          });
-        },
+      // ================================
+      //  onDragStart: highlight moves
+      // ================================
+      function onDragStart (dragData) {
+        console.log(dragData)
+        // Clear any old circles
+        board.clearCircles();
 
-        // ================================
-        //  onDrop: make the move
-        // ================================
-        onDrop: function(dropData) {
-          // Remove circles
-          board.clearCircles();
+        // Extract square & piece from dragData
+        let fromSquare = dragData.square;
+        let piece = dragData.piece;
+        console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
-          // Build a UCI-like string, e.g. "e2e4"
-          let moveStr = dropData.source + dropData.target;
+        // only pick up pieces for the side to move
+        if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false
+        if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false
 
-          $.post('/make_move', { move: moveStr }, function(data) {
-            if (data.status === 'ok') {
-              board.position(data.fen);
-              updateStatus();
-            } else {
-              // If server says illegal or error => revert
-              document.getElementById('status').innerText = data.message;
-            }
-          }).fail(function() {
-            board.position(dropData.oldPos);
-            document.getElementById('status').innerText = "Server error, move not processed.";
-          });
+        // If there's no valid square or piece, bail out
+        if (!fromSquare || !piece) return;
 
-          return 'snapback';
+        squareElement = document.querySelector(`[data-square-coord="${fromSquare}"]`);
+        if (squareElement) { squareElement.style.opacity = "0.5"; }
+
+        // Ask the server for all possible destination squares
+        $.post('/legal_moves', { square: fromSquare }, function(res) {
+          if (res && res.moves) {
+            console.log(`Server responded with moves:`, res.moves);
+            // Add circles for each valid destination
+            res.moves.forEach(destSquare => {
+              board.addCircle(destSquare);  // default circle
+            });
+          } else {
+            console.log('No moves returned from /legal_moves');
+          }
+        }).fail(function() {
+          console.error('Failed to retrieve legal moves from server');
+        });
+      }
+
+      // ================================
+      //  onDrop: make the move
+      // ================================
+      function onDrop (dropData) {
+        // Remove circles
+        board.clearCircles();
+
+        if (squareElement) {
+          squareElement.style.opacity = "1.0";
+          squareElement = null;
         }
-      });
+
+        // Build a UCI-like string, e.g. "e2e4"
+        let moveStr = dropData.source + dropData.target;
+
+        $.post('/make_move', { move: moveStr }, function(data) {
+          if (data.status === 'ok') {
+            board.position(data.fen);
+            updateStatus();
+          } else {
+            // If server says illegal or error => revert
+            document.getElementById('status').innerText = data.message;
+          }
+        }).fail(function() {
+          board.position(dropData.oldPos);
+          document.getElementById('status').innerText = "Server error, move not processed.";
+        });
+
+        return 'snapback';
+      }
 
       // Connect to Socket.IO
       const socket = io(location.origin, { path: '/socket.io' });
@@ -134,6 +158,7 @@
           }
           if (board) {
             const newOrientation = board.orientation(data.orientation)
+            moveOrientationColor = data.orientation;
           }
         });
       }
