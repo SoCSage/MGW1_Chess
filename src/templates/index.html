@@ -139,7 +139,7 @@
       }
 
       $(document).ready(function() {
-        $('#pgnTable').DataTable({
+        let table = $('#pgnTable').DataTable({
           paging: false,
           searching: true,
           info: false,
@@ -150,6 +150,33 @@
         });
 
         updateStatus();
+
+        $('#pgnTable tbody').on('click', 'td', function() {
+          let cell = table.cell(this);
+
+          if (cell.data() === "waiting") { return; }
+
+          let row = table.row(this.parentNode);
+          let movePair = row.data()[0];
+          let column = cell.index().column;
+          let movePlayer = column === 1 ? 'white' : 'black'
+
+          fetch('/fen_string' , {
+            method: `POST`,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ move_pair: movePair, move_player: movePlayer })
+          })
+            .then(response => response.json())
+            .then(data => {
+              let fenString = data.fen_string_value;
+              board.fen(fenString);
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            })
+        });
       });
 
       // Reset the board (call server /reset)

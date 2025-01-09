@@ -76,6 +76,7 @@ def make_move():
             name_in_cookie = "Anonymous"
         move_owners.append(name_in_cookie)
         tracker.update_moves_list(board, move_owners, manager.get_orientation())
+        tracker.append_fen_string(board.fen())
         manager.toggle_orientation()
         socketio.emit(
             "board_update",
@@ -118,6 +119,30 @@ def game_status():
             "statusText": helper.status_text(board),
             "orientation": manager.get_orientation(),
             "moves": tracker.get_moves_list(),
+        }
+    )
+
+
+@app.route("/fen_string", methods=["POST"])
+def fen_string():
+    """
+    Returns relevant FEN string for a given move based on the move pair and move player (side).
+
+    Parameters:
+        argument1 (none): No arguments
+
+    Returns:
+        Returns the details in JSON format
+    """
+    move_pair = request.json.get("move_pair")
+    move_player = request.json.get("move_player")
+
+    move_number = helper.decode_move_number(move_pair, move_player)
+    fen_string_value = tracker.get_fen_string(move_number)
+
+    return jsonify(
+        {
+            "fen_string_value": fen_string_value,
         }
     )
 

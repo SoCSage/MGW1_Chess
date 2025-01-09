@@ -54,6 +54,7 @@ class PGN_Tracker:
         Initialize a ChessGameTracker instance to maintain and manage move history.
         """
         self.moves_list = []
+        self.fen_strings = []
 
     def reset(self):
         """
@@ -66,6 +67,7 @@ class PGN_Tracker:
             None
         """
         self.moves_list = []
+        self.fen_strings = []
         return
 
     def update_moves_list(self, board, move_owners, orientation):
@@ -79,7 +81,16 @@ class PGN_Tracker:
 
         Returns:
             None
+
+        Raises:
+            ValueError: Invalid orientation
         """
+
+        if orientation not in ["white", "black"]:
+            raise ValueError(
+                f"Invalid orientation. Must be white or black. Received: {orientation}"
+            )
+
         move_index = len(self.moves_list) * 2
         move_number = (move_index // 2) + 1
         if orientation == "white":
@@ -108,6 +119,39 @@ class PGN_Tracker:
         """
         return self.moves_list
 
+    def append_fen_string(self, fen_value):
+        """
+        Update the fen history ensuring a record of the board state for each move.
+
+        Parameters:
+            fen_value (str): The FEN string for the board.
+
+        Returns:
+            None
+        """
+
+        self.fen_strings.append(fen_value)
+        return
+
+    def get_fen_string(self, move_number):
+        """
+        Retrieve the fen string from the list for a given move.
+
+        Parameters:
+            move_number (int): The move number to retrieve the corresponding FEN.
+
+        Returns:
+            string: A string with the FEN value of a move.
+
+        Raises:
+            IndexError: Invalid move_number
+        """
+
+        if 0 <= move_number < len(self.fen_strings):
+            return self.fen_strings[move_number]
+        else:
+            raise IndexError(f"Index out of range: {move_number}")
+
     def export_moves(self):
         """
         Export the move history to a JSON string.
@@ -121,6 +165,33 @@ class PGN_Tracker:
         import json
 
         return json.dumps(self.moves_list, indent=4)
+
+
+def decode_move_number(move_pair, move_player):
+    """
+    Decode the move number from the move pair and the move player.
+
+    Parameters:
+        move_pair (int): The integer value of the move pair.
+        move_player (str): white or black. Which side made the move.
+
+    Returns:
+        int: The move number in terms of all the moves player in the current game.
+
+    Raises:
+        ValueError: Invalid move_playerp
+    """
+
+    if move_player not in ["white", "black"]:
+        raise ValueError(
+            f"Invalid move_player. Must be white or black. Received: {move_player}"
+        )
+
+    move_index = (move_pair - 1) * 2
+    if move_player == "black":
+        move_index += 1
+
+    return move_index
 
 
 def current_pgn(board, move_owners):
