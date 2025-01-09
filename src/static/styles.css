@@ -117,6 +117,10 @@ button:hover {
   cursor: pointer;
 }
 
+td:focus {
+  outline: 2px solid blue;
+}
+
 /* Responsive layout adjustments */
 @media (max-width: 768px) {
   .game-container {
