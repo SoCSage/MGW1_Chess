@@ -42,7 +42,8 @@
         dropOffBoard: 'snapback',
         pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
         onDragStart,
-        onDrop
+        onDrop,
+        onMousedownSquare
       }
 
       const board = Chessboard2('myBoard', boardConfig)
@@ -52,6 +53,51 @@
 
       let moveOrientationColor;
       let squareElement;
+      let availableMoves = []; // Global variable to store moves data
+      let fromSquare; // Global variable to store the source square
+
+    // ================================
+    //  onMousedownSquare
+    // ================================
+    function onMousedownSquare(evt, domEvt) {
+        const squareClickEventData = evt;
+        const piece = squareClickEventData.piece;
+        const pieceColor = piece ? piece.charAt(0) : null;
+
+        if (piece && pieceColor === moveOrientationColor.charAt(0)) {
+            return;
+        }
+
+        if (availableMoves.includes(squareClickEventData.square)) {
+            handleValidMove(fromSquare + squareClickEventData.square);
+        } else {
+            clearBoardState();
+        }
+    }
+
+    function handleValidMove(moveStr) {
+        $.post('/make_move', { move: moveStr }, function(data) {
+            if (data.status === 'ok') {
+                board.position(data.fen);
+                updateStatus();
+            } else {
+                document.getElementById('status').innerText = data.message;
+                console.log("Move not processed.");
+            }
+        }).fail(function() {
+            board.position(dropData.oldPos);
+            document.getElementById('status').innerText = "Server error, move not processed.";
+            console.log("Server error, move not processed.");
+        });
+
+        board.clearCircles();
+    }
+
+    function clearBoardState() {
+        board.clearCircles();
+        availableMoves = [];
+        fromSquare = null;
+    }
 
       // ================================
       //  onDragStart: highlight moves
@@ -62,7 +108,7 @@
         board.clearCircles();
 
         // Extract square & piece from dragData
-        let fromSquare = dragData.square;
+        fromSquare = dragData.square;
         let piece = dragData.piece;
         console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
@@ -80,6 +126,7 @@
         $.post('/legal_moves', { square: fromSquare }, function(res) {
           if (res && res.moves) {
             console.log(`Server responded with moves:`, res.moves);
+            availableMoves = res.moves; // Store moves data in the global variable
             // Add circles for each valid destination
             res.moves.forEach(destSquare => {
               board.addCircle(destSquare);  // default circle
@@ -96,9 +143,12 @@
       //  onDrop: make the move
       // ================================
       function onDrop (dropData) {
-        // Remove circles
-        board.clearCircles();
 
+        if (dropData.source !== dropData.target){
+            clearBoardState();
+        }
+
+        // Reset square element opacity if needed
         if (squareElement) {
           squareElement.style.opacity = "1.0";
           squareElement = null;
@@ -106,19 +156,7 @@
 
         // Build a UCI-like string, e.g. "e2e4"
         let moveStr = dropData.source + dropData.target;
-
-        $.post('/make_move', { move: moveStr }, function(data) {
-          if (data.status === 'ok') {
-            board.position(data.fen);
-            updateStatus();
-          } else {
-            // If server says illegal or error => revert
-            document.getElementById('status').innerText = data.message;
-          }
-        }).fail(function() {
-          board.position(dropData.oldPos);
-          document.getElementById('status').innerText = "Server error, move not processed.";
-        });
+        handleValidMove(moveStr);
 
         return 'snapback';
       }
