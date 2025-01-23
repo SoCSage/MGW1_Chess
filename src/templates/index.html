@@ -12,20 +12,22 @@
       <div class="info-box">
         <h1>Office Chess: Welcome, {{ name }}!</h1>
         <div id="status"></div>
-        <table id="pgnTable" class="display compact" cellspacing="0" width="100%">
-          <thead>
-            <tr>
-              <th>Move #</th>
-              <th>White Move</th>
-              <th>White User</th>
-              <th>Black Move</th>
-              <th>Black User</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Rows will be dynamically added -->
-          </tbody>
-        </table>
+        <div class="scrollable-table">
+          <table id="pgnTable" class="display compact" cellspacing="0" width="100%">
+            <thead>
+              <tr>
+                <th>Move #</th>
+                <th>White Move</th>
+                <th>White User</th>
+                <th>Black Move</th>
+                <th>Black User</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rows will be dynamically added -->
+            </tbody>
+          </table>
+        </div>
         <button onclick="resetGame()">Reset Game</button>
       </div>
     </div>
@@ -49,6 +51,24 @@
 
       function isWhitePiece (piece) { return /^w/.test(piece) }
       function isBlackPiece (piece) { return /^b/.test(piece) }
+
+      function checkTableState() {
+        var table = $('#pgnTable').DataTable();
+        var order = table.order(); // Get sorting order
+        var search = table.search(); // Get search term
+        var tableContainer = document.querySelector('.scrollable-table');
+        var hasScrollbar = tableContainer.scrollHeight > tableContainer.clientHeight;
+        var isScrolledToBottom = !hasScrollbar || (tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight);
+
+        var isDefaultState = (order[0][0] === 0 && order[0][1] === 'asc') && (search === '') && isScrolledToBottom;
+
+        return isDefaultState;
+      }
+
+      function scrollToBottom() {
+        var tableContainer = document.querySelector('.scrollable-table');
+        tableContainer.scrollTop = tableContainer.scrollHeight;
+      }
 
       let moveOrientationColor;
       let squareElement;
@@ -136,13 +156,12 @@
         updateStatus();
       });
 
-      // Refresh the game status (FEN, PGN, etc.)
       function updateStatus() {
         $.get('/game_status', function(data) {
           if (data) {
             document.getElementById('status').innerText = data.statusText;
-            <!--document.getElementById('fenSpan').innerText = data.fen;-->
-            <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
+            // document.getElementById('fenSpan').innerText = data.fen;
+            // document.getElementById('pgnSpan').innerText = data.pgn;
             const table = $('#pgnTable').DataTable();
             table.clear(); // Clear existing data
             data.moves.forEach(row => {
@@ -154,10 +173,15 @@
                 row["Black User"]
               ]);
             });
+            // Check if the table is in its default state
+            var isTableInDefaultState = checkTableState();
             table.draw();
+            if (isTableInDefaultState) {
+              scrollToBottom();
+            }
           }
           if (board) {
-            const newOrientation = board.orientation(data.orientation)
+            const newOrientation = board.orientation(data.orientation);
             moveOrientationColor = data.orientation;
           }
         });

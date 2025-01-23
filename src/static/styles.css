@@ -117,6 +117,19 @@ button:hover {
   cursor: pointer;
 }
 
+  .scrollable-table {
+    height: 400px;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .scrollable-table thead {
+    position: sticky;
+    top: 0;
+    background-color: white; /* Ensure the header has a background */
+    z-index: 1; /* Ensure the header is above the table rows */
+  }
+
 /* Responsive layout adjustments */
 @media (max-width: 768px) {
   .game-container {
