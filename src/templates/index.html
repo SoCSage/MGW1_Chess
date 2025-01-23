@@ -107,6 +107,15 @@
         // Build a UCI-like string, e.g. "e2e4"
         let moveStr = dropData.source + dropData.target;
 
+        // Check for pawn promotion
+        let piece = dropData.piece[1];
+          let targetRank = dropData.target[1];
+          if (piece === 'P' && targetRank === '8') {
+            moveStr += 'q'; // Promote to queen
+          } else if (piece === 'p' && targetRank === '1') {
+            moveStr += 'q'; // Promote to queen
+        }
+
         $.post('/make_move', { move: moveStr }, function(data) {
           if (data.status === 'ok') {
             board.position(data.fen);
