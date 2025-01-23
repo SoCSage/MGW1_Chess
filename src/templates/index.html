@@ -8,7 +8,29 @@
     <!--</div>-->
 
     <div class="game-container">
-      <div id="myBoard"></div>
+      <div class = "board-wrapper">
+        <div class="notation notation-bottom">
+          <span>A</span>
+          <span>B</span>
+          <span>C</span>
+          <span>D</span>
+          <span>E</span>
+          <span>F</span>
+          <span>G</span>
+          <span>H</span>
+        </div>
+        <div class="notation notation-left">
+          <span>8</span>
+          <span>7</span>
+          <span>6</span>
+          <span>5</span>
+          <span>4</span>
+          <span>3</span>
+          <span>2</span>
+          <span>1</span>
+        </div>
+        <div class="board" id="myBoard"></div>
+      </div>
       <div class="info-box">
         <h1>Office Chess: Welcome, {{ name }}!</h1>
         <div id="status"></div>
@@ -158,6 +180,7 @@
           }
           if (board) {
             const newOrientation = board.orientation(data.orientation)
+            updateNotations();
             moveOrientationColor = data.orientation;
           }
         });
@@ -181,6 +204,37 @@
       function resetGame() {
         window.location.href = "/reset";
       }
+
+    function updateNotations() {
+      const fileNotation = document.querySelector('.notation-bottom');
+      const rankNotation = document.querySelector('.notation-left');
+
+      if (moveOrientationColor === 'white') {
+        // White's perspective
+        const files = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+        fileNotation.querySelectorAll('span').forEach((span, index) => {
+          span.textContent = files[index];
+        });
+
+        rankNotation.querySelectorAll('span').forEach((span, index) => {
+          span.textContent = ranks[index];
+        });
+      } else {
+        // Black's perspective
+        const files = ['H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
+        const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+
+        fileNotation.querySelectorAll('span').forEach((span, index) => {
+          span.textContent = files[index];
+        });
+
+        rankNotation.querySelectorAll('span').forEach((span, index) => {
+          span.textContent = ranks[index];
+        });
+      }
+    }
 
       // On page load, get initial status
       updateStatus();
