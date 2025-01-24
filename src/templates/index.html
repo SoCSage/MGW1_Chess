@@ -3,34 +3,20 @@
 <div class="container">
 
     <!--<div class="info-box">-->
-        <!--  <div>FEN: <span id="fenSpan"></span></div>-->
-        <!--  <div>PGN: <span id="pgnSpan"></span></div>-->
+            <!--  <div>FEN: <span id="fenSpan"></span></div>-->
+            <!--  <div>PGN: <span id="pgnSpan"></span></div>-->
     <!--</div>-->
 
     <div class="game-container">
         <div class = "board-wrapper">
-        <div class="notation notation-bottom">
-          <span>A</span>
-          <span>B</span>
-          <span>C</span>
-          <span>D</span>
-          <span>E</span>
-          <span>F</span>
-          <span>G</span>
-          <span>H</span>
+            <div class="notation notation-bottom" id="notation-bottom">
+                <!-- Dynamic content will be added here -->
+            </div>
+            <div class="notation notation-left" id="notation-left">
+                <!-- Dynamic content will be added here -->
+            </div>
+            <div class="board" id="myBoard"></div>
         </div>
-        <div class="notation notation-left">
-          <span>8</span>
-          <span>7</span>
-          <span>6</span>
-          <span>5</span>
-          <span>4</span>
-          <span>3</span>
-          <span>2</span>
-          <span>1</span>
-        </div>
-        <div class="board" id="myBoard"></div>
-      </div>
         <div class="info-box">
             <h1>Office Chess: Welcome, {{ name }}!</h1>
             <div id="status"></div>
@@ -53,81 +39,81 @@
     </div>
 
     <script>
-        // Pull initial FEN from the server-side template variable
-        const initialFen = "{{ fen }}";
+          // Pull initial FEN from the server-side template variable
+          const initialFen = "{{ fen }}";
 
-        // Initialize the Chessboard2
-        const boardConfig = {
-            sparePieces: true,
-            position: initialFen,
-            draggable: true,
-            dropOffBoard: 'snapback',
-            pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
-            onDragStart,
-            onDrop
-        }
+          // Initialize the Chessboard2
+          const boardConfig = {
+                sparePieces: true,
+                position: initialFen,
+                draggable: true,
+                dropOffBoard: 'snapback',
+                pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
+                onDragStart,
+                onDrop
+          }
 
-        const board = Chessboard2('myBoard', boardConfig)
+          const board = Chessboard2('myBoard', boardConfig)
 
-        function isWhitePiece (piece) { return /^w/.test(piece) }
-        function isBlackPiece (piece) { return /^b/.test(piece) }
+          function isWhitePiece (piece) { return /^w/.test(piece) }
+          function isBlackPiece (piece) { return /^b/.test(piece) }
 
-        let moveOrientationColor;
-        let squareElement;
+          let moveOrientationColor;
+          let squareElement;
 
-        // ================================
-        //  onDragStart: highlight moves
-        // ================================
-        function onDragStart (dragData) {
-            console.log(dragData)
-            // Clear any old circles
-            board.clearCircles();
+          // ================================
+          //  onDragStart: highlight moves
+          // ================================
+          function onDragStart (dragData) {
+                console.log(dragData)
+                // Clear any old circles
+                board.clearCircles();
 
-            // Extract square & piece from dragData
-            let fromSquare = dragData.square;
-            let piece = dragData.piece;
-            console.log(`Dragging piece ${piece} from square ${fromSquare}`);
+                // Extract square & piece from dragData
+                let fromSquare = dragData.square;
+                let piece = dragData.piece;
+                console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
-            // only pick up pieces for the side to move
-            if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false
-            if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false
+                // only pick up pieces for the side to move
+                if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false
+                if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false
 
-            // If there's no valid square or piece, bail out
-            if (!fromSquare || !piece) return;
+                // If there's no valid square or piece, bail out
+                if (!fromSquare || !piece) return;
 
-            squareElement = document.querySelector(`[data-square-coord="${fromSquare}"]`);
-            if (squareElement) { squareElement.style.opacity = "0.5"; }
+                squareElement = document.querySelector(`[data-square-coord="${fromSquare}"]`);
+                if (squareElement) { squareElement.style.opacity = "0.5"; }
 
-            // Ask the server for all possible destination squares
-            $.post('/legal_moves', { square: fromSquare }, function(res) {
-                if (res && res.moves) {
-                    console.log(`Server responded with moves:`, res.moves);
-                    // Add circles for each valid destination
-                    res.moves.forEach(destSquare => {
-                        board.addCircle(destSquare);  // default circle
-                    });
-                } else {
-                    console.log('No moves returned from /legal_moves');
+                // Ask the server for all possible destination squares
+                $.post('/legal_moves', { square: fromSquare }, function(res) {
+                      if (res && res.moves) {
+                            console.log(`Server responded with moves:`, res.moves);
+                            // Add circles for each valid destination
+                            res.moves.forEach(destSquare => {
+                                  board.addCircle(destSquare);  // default circle
+                            });
+                      } else {
+                            console.log('No moves returned from /legal_moves');
+                      }
+                }).fail(function() {
+                      console.error('Failed to retrieve legal moves from server');
+                });
+          }
+
+          // ================================
+          //  onDrop: make the move
+          // ================================
+          function onDrop (dropData) {
+                // Remove circles
+                board.clearCircles();
+
+                if (squareElement) {
+                      squareElement.style.opacity = "1.0";
+                      squareElement = null;
                 }
-            }).fail(function() {
-                console.error('Failed to retrieve legal moves from server');
-            });
-        }
 
-        // ================================
-        //  onDrop: make the move
-        // ================================
-        function onDrop (dropData) {
-            // Remove circles
-            board.clearCircles();
-
-            if (squareElement) {
-                squareElement.style.opacity = "1.0";
-                squareElement = null;
-            }
-
-            // Build a UCI-like string, e.g. "e2e4"
-            let moveStr = dropData.source + dropData.target;
+                // Build a UCI-like string, e.g. "e2e4"
+                let moveStr = dropData.source + dropData.target;
 
             // Check for pawn promotion
             // TODO: Implement underpromotion (to rook, bishop, or knight) in the future
@@ -137,115 +123,121 @@
                 moveStr += 'q'; // Promote to queen
             }
 
-            $.post('/make_move', { move: moveStr }, function(data) {
-                if (data.status === 'ok') {
-                    board.position(data.fen);
-                    updateStatus();
-                } else {
-                    // If server says illegal or error => revert
-                    document.getElementById('status').innerText = data.message;
-                }
-            }).fail(function() {
-                board.position(dropData.oldPos);
-                document.getElementById('status').innerText = "Server error, move not processed.";
-            });
+                $.post('/make_move', { move: moveStr }, function(data) {
+                      if (data.status === 'ok') {
+                            board.position(data.fen);
+                            updateStatus();
+                      } else {
+                            // If server says illegal or error => revert
+                            document.getElementById('status').innerText = data.message;
+                      }
+                }).fail(function() {
+                      board.position(dropData.oldPos);
+                      document.getElementById('status').innerText = "Server error, move not processed.";
+                });
 
-            return 'snapback';
-        }
+                return 'snapback';
+          }
 
-        // Connect to Socket.IO
-        const socket = io(location.origin, { path: '/socket.io' });
+          // Connect to Socket.IO
+          const socket = io(location.origin, { path: '/socket.io' });
 
-        // Listen for "board_update" events from the server
-        socket.on('board_update', function(data) {
-            console.log("Received board_update from server:", data);
-            // data.fen, data.pgn, data.statusText
-            if (board) {
-                board.position(data.fen);
-            }
-            updateStatus();
-        });
-
-        // Refresh the game status (FEN, PGN, etc.)
-        function updateStatus() {
-            $.get('/game_status', function(data) {
-                if (data) {
-                    document.getElementById('status').innerText = data.statusText;
-                    <!--document.getElementById('fenSpan').innerText = data.fen;-->
-                    <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
-                    const table = $('#pgnTable').DataTable();
-                    table.clear(); // Clear existing data
-                    data.moves.forEach(row => {
-                        table.row.add([
-                        row["Move #"],
-                        row["White Move"],
-                        row["White User"],
-                        row["Black Move"],
-                        row["Black User"]
-                        ]);
-                    });
-                    table.draw();
-                }
+          // Listen for "board_update" events from the server
+          socket.on('board_update', function(data) {
+                console.log("Received board_update from server:", data);
+                // data.fen, data.pgn, data.statusText
                 if (board) {
-                    const newOrientation = board.orientation(data.orientation)
-                    updateNotations();
-                    moveOrientationColor = data.orientation;
+                      board.position(data.fen);
                 }
-            });
-        }
+                updateStatus();
+          });
 
-        $(document).ready(function() {
-            $('#pgnTable').DataTable({
-                paging: false,
-                searching: true,
-                info: false,
-                autoWidth: true,
-                columnDefs: [
-                { className: "dt-center", targets: "_all" }
-                ]
-            });
+          // Refresh the game status (FEN, PGN, etc.)
+          function updateStatus() {
+                $.get('/game_status', function(data) {
+                      if (data) {
+                            document.getElementById('status').innerText = data.statusText;
+                            <!--document.getElementById('fenSpan').innerText = data.fen;-->
+                            <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
+                            const table = $('#pgnTable').DataTable();
+                            table.clear(); // Clear existing data
+                            data.moves.forEach(row => {
+                                  table.row.add([
+                                row["Move #"],
+                                row["White Move"],
+                                row["White User"],
+                                row["Black Move"],
+                                row["Black User"]
+                                  ]);
+                            });
+                            table.draw();
+                      }
+                      if (board) {
+                            const newOrientation = board.orientation(data.orientation);
+                            generateNotations();
+                            moveOrientationColor = data.orientation;
+                      }
+                });
+          }
+
+          $(document).ready(function() {
+                $('#pgnTable').DataTable({
+                      paging: false,
+                      searching: true,
+                      info: false,
+                      autoWidth: true,
+                      columnDefs: [
+                    { className: "dt-center", targets: "_all" }
+                      ]
+                });
 
             updateStatus();
         });
 
-        // Reset the board (call server /reset)
-        function resetGame() {
-            window.location.href = "/reset";
-      }
+          // Reset the board (call server /reset)
+          function resetGame() {
+                window.location.href = "/reset";
+        }
 
-    function updateNotations() {
-      const fileNotation = document.querySelector('.notation-bottom');
-      const rankNotation = document.querySelector('.notation-left');
+        function generateNotations() {
+            const fileNotation = document.querySelector('.notation-bottom');
+            const rankNotation = document.querySelector('.notation-left');
 
-      if (moveOrientationColor === 'white') {
-        // White's perspective
-        const files = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+            // Clear existing notations
+            fileNotation.innerHTML = '';
+            rankNotation.innerHTML = '';
 
-        fileNotation.querySelectorAll('span').forEach((span, index) => {
-          span.textContent = files[index];
-        });
+            const files = moveOrientationColor === 'white' ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] : ['H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
+            const ranks = moveOrientationColor === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
 
-        rankNotation.querySelectorAll('span').forEach((span, index) => {
-          span.textContent = ranks[index];
-        });
-      } else {
-        // Black's perspective
-        const files = ['H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
-        const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+            files.forEach(file => {
+                const span = document.createElement('span');
+                span.textContent = file;
+                fileNotation.appendChild(span);
+            });
 
-        fileNotation.querySelectorAll('span').forEach((span, index) => {
-          span.textContent = files[index];
-        });
-
-        rankNotation.querySelectorAll('span').forEach((span, index) => {
-          span.textContent = ranks[index];
-        });
-      }
-      }
+            ranks.forEach(rank => {
+                const span = document.createElement('span');
+                span.textContent = rank;
+                rankNotation.appendChild(span);
+            });
+        }
 
         // On page load, get initial status
         updateStatus();
+
+        // Use ResizeObserver to detect changes in the size of the board-wrapper element
+        const boardWrapper = document.querySelector('.board-wrapper');
+        if (boardWrapper) {
+            const resizeObserver = new ResizeObserver(() => {
+                if (board) {
+                    board.resize();
+                }
+            });
+            resizeObserver.observe(boardWrapper);
+        }
+
     </script>
+</div>
 </div>
 {% endblock %}
