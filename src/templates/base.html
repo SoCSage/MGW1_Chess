@@ -1,73 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <title>Office Chess</title>
 
     <!-- Optional CSS -->
     <link
-      rel="stylesheet"
-      href="{{url_for('static', filename='styles.css')}}"
+        rel="stylesheet"
+        href="{{url_for('static', filename='styles.css')}}"
     />
 
-     <!-- Google Fonts (optional) -->
+    <!-- Google Fonts (optional) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap"
-      rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet"
     >
 
     <!-- jQuery (CDN) -->
     <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-      integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
+        src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
     ></script>
 
     <!-- Chessboard2 CSS (CDN) -->
     <link
-      rel="stylesheet"
-      href="https://unpkg.com/@chrisoakman/chessboard2@0.5.0/dist/chessboard2.min.css"
-      integrity="sha384-47VeTDpmy4yT21gKPXQcLQYQZwlmz27gEH5NTrOmTk3G/SGvMyltclOW/Q8uE+sL"
-      crossorigin="anonymous"
+        rel="stylesheet"
+        href="https://unpkg.com/@chrisoakman/chessboard2@0.5.0/dist/chessboard2.min.css"
+        integrity="sha384-47VeTDpmy4yT21gKPXQcLQYQZwlmz27gEH5NTrOmTk3G/SGvMyltclOW/Q8uE+sL"
+        crossorigin="anonymous"
     />
 
     <!-- Chessboard2 JavaScript (CDN) -->
     <script
-      src="https://unpkg.com/@chrisoakman/chessboard2@0.5.0/dist/chessboard2.min.js"
-      integrity="sha384-/KwQCjA1GWovZNV3QDVtvSMDzO4reGgarF/RqHipr7hIUElH3r5zNl9WEPPOBRIF"
-      crossorigin="anonymous"
+        src="https://unpkg.com/@chrisoakman/chessboard2@0.5.0/dist/chessboard2.min.js"
+        integrity="sha384-/KwQCjA1GWovZNV3QDVtvSMDzO4reGgarF/RqHipr7hIUElH3r5zNl9WEPPOBRIF"
+        crossorigin="anonymous"
     ></script>
 
     <!-- DataTables CSS (CDN) -->
     <link
-      rel="stylesheet"
-      href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css"
-      crossorigin="anonymous"
+        rel="stylesheet"
+        href="https://cdn.datatables.net/2.2.1/css/dataTables.dataTables.min.css"
+        crossorigin="anonymous"
     />
 
     <!-- DataTables JavaScript (CDN) -->
     <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net/2.1.8/dataTables.min.js"
-      integrity="sha512-aB+KD1UH6xhwz0ZLqIGK+if/B83XzgnFzDJtf195axOEqurA7ahWCpl8wgXWVfcMslhnmYigAjYXShrJSlxgWg=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
+        src="https://cdn.datatables.net/2.2.1/js/dataTables.min.js"
+        integrity="sha512-j0JNzzcT4VrPZe1L2nLrJpaQqH5FHhG7dG2P+yOcIRxwm5G5NDf3em4rd3pFEfTs6ta5itVC49GE1+r7Ej/bSw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    ></script>
+
+    <!-- DataTables Scroller CSS (CDN) -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.datatables.net/scroller/2.4.3/css/scroller.dataTables.min.css"
+        crossorigin="anonymous"
+    />
+
+    <!-- DataTables Scroller JavaScript (CDN) -->
+    <script
+        src="https://cdn.datatables.net/scroller/2.4.3/js/dataTables.scroller.min.js"
+        integrity="sha512-bfSzsN8iShTe3z3/mi8xNYAbFXHp43w5Fr20nnlZ3VSeoRzqHPmVjBOinP4zNWK0k5ZfQtYMdBPGVS6U9Dp0Cw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    ></script>
+
+    <!-- DataTables FixedHeader CSS (CDN) -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.datatables.net/fixedheader/4.0.1/css/fixedHeader.dataTables.min.css"
+        crossorigin="anonymous"
+    />
+
+    <!-- DataTables FixedHeader JavaScript (CDN) -->
+    <script
+        src="https://cdn.datatables.net/fixedheader/4.0.1/js/dataTables.fixedHeader.min.js"
+        integrity="sha512-W5OWvAnlm06JdQj5r3JePYNJ1PSK8kHK/fgaY/WxsLyIoENmxXwWfN0DGp3UVIcnh8ucWLZNxDaS8nUrfj6vGg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
     ></script>
 
     <!-- Socket.IO client library (served automatically by Flask-SocketIO): ISSUES; Hence, using CDN -->
     <!-- load a socket.io v4 client from CDN -->
     <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js"
-      integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+"
-      crossorigin="anonymous"
+        src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js"
+        integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+"
+        crossorigin="anonymous"
     ></script>
 
-  </head>
+</head>
 
-  <body>
+<body>
     <div class="content">{% block content %} {% endblock %}</div>
-  </body>
+</body>
 
 </html>
