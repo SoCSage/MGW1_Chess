@@ -186,10 +186,10 @@
 
         $(document).ready(function() {
             $('#pgnTable').DataTable({
-                "preDrawCallback": function (settings) {
+                "preDrawCallback": (settings) => {
                     pageScrollPos = $('div.dataTables_scrollBody').scrollTop();
                 },
-                "drawCallback": function (settings) {
+                "drawCallback": (settings) => {
                     $('div.dataTables_scrollBody').scrollTop(pageScrollPos);
                 },
                 scrollY: '275px',
