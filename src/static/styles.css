@@ -81,18 +81,20 @@ table.dataTable thead th {
     text-align: center !important;
 }
 
-table.dataTable.stripe tbody tr.even, table.dataTable.display tbody tr.even {
+/* Remove background color for even rows in striped and displayed tables */
+table.dataTable.stripe tbody tr.even,
+table.dataTable.display tbody tr.even {
     background-color: transparent !important;
 }
 
 /* Custom styles for specific columns */
 .column-white {
-    background-color: #ffffff; /* White background */
+    background: #ffffff; /* White background */
     color: #000; /* Black text */
 }
 
 .column-black {
-    background-color: #4a4a4a; /* Dark grey background */
+    background: #4a4a4a; /* Dark grey background */
     color: #fff; /* White text */
 }
 

@@ -50,7 +50,17 @@
         function isWhitePiece (piece) { return /^w/.test(piece) }
         function isBlackPiece (piece) { return /^b/.test(piece) }
 
-        function scrollToBottom() {
+        function isTableScrolledToBottom() {
+            const scrollContainer = document.querySelector('.dt-scroll-body');
+            if (!scrollContainer) {
+                console.error('Scroll container not found');
+                return false;
+            }
+            const { scrollHeight, scrollTop, clientHeight } = scrollContainer;
+            return scrollHeight === scrollTop + clientHeight;
+        }
+
+        function scrollTableBackToBottom() {
             const dataTable = $('#pgnTable').DataTable();
             const totalRows = dataTable.rows().count();
             if (totalRows === 0) return;
@@ -158,10 +168,13 @@
                         row["Black User"]
                         ]);
                     });
-                    var isScrolledToBottomVar = isScrolledToBottom();
+                    // Check if the table was scrolled to the bottom before redrawing
+                    const tableWasScrolledToBottom = isTableScrolledToBottom();
+                    // Redraw the table
                     table.draw();
-                    if (isScrolledToBottomVar){
-                        scrollToBottom();
+                    // Scroll back to the bottom if it was previously scrolled to the bottom
+                    if (tableWasScrolledToBottom) {
+                        scrollTableBackToBottom();
                     }
                 }
                 if (board) {
@@ -200,18 +213,6 @@
         function resetGame() {
             window.location.href = "/reset";
         }
-
-        function isScrolledToBottom() {
-            const scrollBody = document.querySelector('.dt-scroll-body');
-            return scrollBody.scrollHeight - scrollBody.scrollTop === scrollBody.clientHeight;
-        }
-
-        // function isScrolledToBottom() {
-        //     var table = $('#pgnTable').DataTable();
-        //     var bottomVisibleRow = table.row(':eq(' + table.scroller.page().end + ')', {order: 'applied', search: 'applied'}).data()[0];
-        //     var rowCount = table.rows().count();
-        //     return bottomVisibleRow === rowCount;
-        // }
 
         // On page load, get initial status
         updateStatus();
