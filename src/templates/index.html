@@ -1,227 +1,274 @@
 {% extends 'base.html' %}
 {% block content %}
-  <div class="container">
+<div class="container">
 
     <!--<div class="info-box">-->
-    <!--  <div>FEN: <span id="fenSpan"></span></div>-->
-    <!--  <div>PGN: <span id="pgnSpan"></span></div>-->
+        <!--  <div>FEN: <span id="fenSpan"></span></div>-->
+        <!--  <div>PGN: <span id="pgnSpan"></span></div>-->
     <!--</div>-->
 
     <div class="game-container">
-      <div id="myBoard"></div>
-      <div class="info-box">
-        <h1>Office Chess: Welcome, {{ name }}!</h1>
-        <div id="status"></div>
-        <table id="pgnTable" class="display compact" cellspacing="0" width="100%">
-          <thead>
-            <tr>
-              <th>Move #</th>
-              <th>White Move</th>
-              <th>White User</th>
-              <th>Black Move</th>
-              <th>Black User</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Rows will be dynamically added -->
-          </tbody>
-        </table>
-        <button onclick="resetGame()">Reset Game</button>
-      </div>
+        <div id="myBoard"></div>
+        <div class="info-box">
+            <h1>Office Chess: Welcome, {{ name }}!</h1>
+            <div id="status"></div>
+            <table id="pgnTable" class="display compact" cellspacing="0" width="100%">
+                <thead>
+                    <tr>
+                        <th>Move #</th>
+                        <th>White Move</th>
+                        <th>White User</th>
+                        <th>Black Move</th>
+                        <th>Black User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be dynamically added -->
+                </tbody>
+            </table>
+            <button onclick="resetGame()">Reset Game</button>
+        </div>
     </div>
 
     <script>
-      // Pull initial FEN from the server-side template variable
-      const initialFen = "{{ fen }}";
+        // Pull initial FEN from the server-side template variable
+        const initialFen = "{{ fen }}";
 
-      // Initialize the Chessboard2
-      const boardConfig = {
-        sparePieces: true,
-        position: initialFen,
-        draggable: true,
-        dropOffBoard: 'snapback',
-        pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
-        onDragStart,
-        onDrop,
-        onMousedownSquare
-      }
-
-      const board = Chessboard2('myBoard', boardConfig)
-
-      function isWhitePiece (piece) { return /^w/.test(piece) }
-      function isBlackPiece (piece) { return /^b/.test(piece) }
-
-      let moveOrientationColor;
-      let squareElement;
-      let availableMoves = []; // Global variable to store moves data
-      let fromSquare; // Global variable to store the source square
-
-    // ================================
-    //  onMousedownSquare
-    // ================================
-    function onMousedownSquare(evt, domEvt) {
-        const squareClickEventData = evt;
-        const piece = squareClickEventData.piece;
-        const pieceColor = piece ? piece.charAt(0) : null;
-
-        if (piece && pieceColor === moveOrientationColor.charAt(0)) {
-            return;
+        // Initialize the Chessboard2
+        const boardConfig = {
+            sparePieces: true,
+            position: initialFen,
+            draggable: true,
+            dropOffBoard: 'snapback',
+            pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
+            onDragStart,
+            onDrop,
+            onMousedownSquare,
         }
 
-        if (availableMoves.includes(squareClickEventData.square)) {
-            handleValidMove(fromSquare + squareClickEventData.square);
-        } else {
-            clearBoardState();
-        }
-    }
+        const board = Chessboard2('myBoard', boardConfig)
 
-    function handleValidMove(moveStr) {
-        $.post('/make_move', { move: moveStr }, function(data) {
-            if (data.status === 'ok') {
-                board.position(data.fen);
-                updateStatus();
+        function isWhitePiece (piece) { return /^w/.test(piece) }
+        function isBlackPiece (piece) { return /^b/.test(piece) }
+
+        let moveOrientationColor;
+        let squareElement;
+        let statusTimeout;
+
+        let state = {
+            selectedPiece: null,
+            availableMoves: [],
+            fromSquare: null,
+        };
+
+        // Function to set the opacity of the square element
+        function setSquareElementOpacity(element, opacity) {
+            if (typeof opacity === 'string') {
+                switch (opacity) {
+                    case 'pieceSelected':
+                        element.style.opacity = "0.5";
+                        break;
+                    case 'noPieceSelected':
+                        element.style.opacity = "1.0";
+                        break;
+                    default:
+                        console.warn('Unknown opacity setting:', opacity);
+                }
+            } else if (typeof opacity === 'number') {
+                element.style.opacity = opacity.toString();
             } else {
-                document.getElementById('status').innerText = data.message;
-                console.log("Move not processed.");
+                console.warn('Invalid opacity value:', opacity);
             }
-        }).fail(function() {
-            board.position(dropData.oldPos);
-            document.getElementById('status').innerText = "Server error, move not processed.";
-            console.log("Server error, move not processed.");
-        });
+        }
 
-        board.clearCircles();
-    }
+        // ================================
+        //  onMousedownSquare
+        // ================================
+        function onMousedownSquare(evt, domEvt) {
+            const { piece, square } = evt;
+            const pieceColor = piece ? piece.charAt(0) : null;
 
-    function clearBoardState() {
-        board.clearCircles();
-        availableMoves = [];
-        fromSquare = null;
-    }
+            // If a piece is already selected and the clicked square is a valid move
+            if (state.selectedPiece && state.availableMoves.includes(square)) {
+                handleValidMove(state.fromSquare + square);
+            } else {
+                // Reset the opacity of the source square if an invalid square is clicked
+                if (squareElement) {
+                    setSquareElementOpacity(squareElement, 'noPieceSelected');
+                    squareElement = null;
+                }
+                clearBoardState();
+            }
+        }
 
-      // ================================
-      //  onDragStart: highlight moves
-      // ================================
-      function onDragStart (dragData) {
-        console.log(dragData)
-        // Clear any old circles
-        board.clearCircles();
-
-        // Extract square & piece from dragData
-        fromSquare = dragData.square;
-        let piece = dragData.piece;
-        console.log(`Dragging piece ${piece} from square ${fromSquare}`);
-
-        // only pick up pieces for the side to move
-        if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false
-        if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false
-
-        // If there's no valid square or piece, bail out
-        if (!fromSquare || !piece) return;
-
-        squareElement = document.querySelector(`[data-square-coord="${fromSquare}"]`);
-        if (squareElement) { squareElement.style.opacity = "0.5"; }
-
-        // Ask the server for all possible destination squares
-        $.post('/legal_moves', { square: fromSquare }, function(res) {
-          if (res && res.moves) {
-            console.log(`Server responded with moves:`, res.moves);
-            availableMoves = res.moves; // Store moves data in the global variable
-            // Add circles for each valid destination
-            res.moves.forEach(destSquare => {
-              board.addCircle(destSquare);  // default circle
+        function handleValidMove(moveStr) {
+            $.post('/make_move', { move: moveStr })
+            .done(function(data) {
+                if (data.status === 'ok') {
+                    board.position(data.fen);
+                    updateStatus();
+                    // Reset the opacity of the source square
+                    if (squareElement) {
+                        setSquareElementOpacity(squareElement, 'noPieceSelected');
+                        squareElement = null;
+                    }
+                } else {
+                    displayStatusMessage(data.message);
+                }
+            })
+            .fail(function() {
+                board.position(dropData.oldPos);
+                displayStatusMessage("Server error, move not processed.");
             });
-          } else {
-            console.log('No moves returned from /legal_moves');
-          }
-        }).fail(function() {
-          console.error('Failed to retrieve legal moves from server');
-        });
-      }
 
-      // ================================
-      //  onDrop: make the move
-      // ================================
-      function onDrop (dropData) {
-
-        if (dropData.source !== dropData.target){
-            clearBoardState();
+            board.clearCircles();
         }
 
-        // Reset square element opacity if needed
-        if (squareElement) {
-          squareElement.style.opacity = "1.0";
-          squareElement = null;
+        function displayStatusMessage(message) {
+            const statusElement = document.getElementById('status');
+            statusElement.innerText = message;
+            console.log(message);
+
+            // Clear any existing timeout
+            if (statusTimeout) {
+                clearTimeout(statusTimeout);
+            }
+
+            // Set a new timeout
+            statusTimeout = setTimeout(() => {
+                statusElement.innerText = '';
+            }, 5000); // Clear message after 5 seconds
         }
 
-        // Build a UCI-like string, e.g. "e2e4"
-        let moveStr = dropData.source + dropData.target;
-        handleValidMove(moveStr);
-
-        return 'snapback';
-      }
-
-      // Connect to Socket.IO
-      const socket = io(location.origin, { path: '/socket.io' });
-
-      // Listen for "board_update" events from the server
-      socket.on('board_update', function(data) {
-        console.log("Received board_update from server:", data);
-        // data.fen, data.pgn, data.statusText
-        if (board) {
-          board.position(data.fen);
+        function clearBoardState() {
+            board.clearCircles();
+            state.selectedPiece = null;
+            state.availableMoves = [];
+            state.fromSquare = null;
         }
-        updateStatus();
-      });
 
-      // Refresh the game status (FEN, PGN, etc.)
-      function updateStatus() {
-        $.get('/game_status', function(data) {
-          if (data) {
-            document.getElementById('status').innerText = data.statusText;
-            <!--document.getElementById('fenSpan').innerText = data.fen;-->
-            <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
-            const table = $('#pgnTable').DataTable();
-            table.clear(); // Clear existing data
-            data.moves.forEach(row => {
-              table.row.add([
-                row["Move #"],
-                row["White Move"],
-                row["White User"],
-                row["Black Move"],
-                row["Black User"]
-              ]);
+        // ================================
+        //  onDragStart: highlight moves
+        // ================================
+        function onDragStart(dragData) {
+            board.clearCircles();
+
+            state.fromSquare = dragData.square;
+            let piece = dragData.piece;
+
+            if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false;
+            if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false;
+
+            if (!state.fromSquare || !piece) return;
+
+            state.selectedPiece = piece;
+
+            squareElement = document.querySelector(`[data-square-coord="${state.fromSquare}"]`);
+            if (squareElement) { setSquareElementOpacity(squareElement, 'pieceSelected'); }
+
+            $.post('/legal_moves', { square: state.fromSquare }, function(res) {
+                if (res && res.moves) {
+                    state.availableMoves = res.moves;
+                    res.moves.forEach(destSquare => {
+                        board.addCircle(destSquare);
+                    });
+                } else {
+                    console.log('No moves returned from /legal_moves');
+                }
+            }).fail(function() {
+                console.error('Failed to retrieve legal moves from server');
+                displayStatusMessage('Failed to retrieve legal moves from server');
             });
-            table.draw();
-          }
-          if (board) {
-            const newOrientation = board.orientation(data.orientation)
-            moveOrientationColor = data.orientation;
-          }
-        });
-      }
+        }
 
-      $(document).ready(function() {
-        $('#pgnTable').DataTable({
-          paging: false,
-          searching: true,
-          info: false,
-          autoWidth: true,
-          columnDefs: [
-            { className: "dt-center", targets: "_all" }
-          ]
+        // ================================
+        //  onDrop: make the move
+        // ================================
+        function onDrop (dropData) {
+
+            if (dropData.source === dropData.target) {
+                // Piece dropped back on the source square, do not clear state
+                if (squareElement) {
+                    setSquareElementOpacity(squareElement, 'pieceSelected');
+                }
+                return 'snapback';
+            }
+
+            // Reset square element opacity if needed
+            if (squareElement) {
+                setSquareElementOpacity(squareElement, 'noPieceSelected');
+                squareElement = null;
+            }
+
+            // Build a UCI-like string, e.g. "e2e4"
+            let moveStr = dropData.source + dropData.target;
+            handleValidMove(moveStr);
+
+            return 'snapback';
+        }
+
+        // Connect to Socket.IO
+        const socket = io(location.origin, { path: '/socket.io' });
+
+        // Listen for "board_update" events from the server
+        socket.on('board_update', function(data) {
+            console.log("Received board_update from server:", data);
+            // data.fen, data.pgn, data.statusText
+            if (board) {
+                board.position(data.fen);
+            }
+            updateStatus();
         });
 
+        // Refresh the game status (FEN, PGN, etc.)
+        function updateStatus() {
+            $.get('/game_status', function(data) {
+                if (data) {
+                    displayStatusMessage(data.statusText);
+                    <!--document.getElementById('fenSpan').innerText = data.fen;-->
+                    <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
+                    const table = $('#pgnTable').DataTable();
+                    table.clear(); // Clear existing data
+                    data.moves.forEach(row => {
+                        table.row.add([
+                        row["Move #"],
+                        row["White Move"],
+                        row["White User"],
+                        row["Black Move"],
+                        row["Black User"]
+                        ]);
+                    });
+                    table.draw();
+                }
+                if (board) {
+                    const newOrientation = board.orientation(data.orientation)
+                    moveOrientationColor = data.orientation;
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            $('#pgnTable').DataTable({
+                paging: false,
+                searching: true,
+                info: false,
+                autoWidth: true,
+                columnDefs: [
+                { className: "dt-center", targets: "_all" }
+                ]
+            });
+
+            updateStatus();
+        });
+
+        // Reset the board (call server /reset)
+        function resetGame() {
+            availableMoves = []; // Reset the availableMoves array
+            window.location.href = "/reset";
+        }
+
+        // On page load, get initial status
         updateStatus();
-      });
-
-      // Reset the board (call server /reset)
-      function resetGame() {
-        window.location.href = "/reset";
-      }
-
-      // On page load, get initial status
-      updateStatus();
     </script>
-  </div>
+</div>
 {% endblock %}
