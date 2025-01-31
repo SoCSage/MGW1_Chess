@@ -158,8 +158,11 @@
                         row["Black User"]
                         ]);
                     });
+                    var isScrolledToBottomVar = isScrolledToBottom();
                     table.draw();
-                    scrollToBottom();
+                    if (isScrolledToBottomVar){
+                        scrollToBottom();
+                    }
                 }
                 if (board) {
                     const newOrientation = board.orientation(data.orientation);
@@ -170,6 +173,12 @@
 
         $(document).ready(function() {
             $('#pgnTable').DataTable({
+                "preDrawCallback": function (settings) {
+                    pageScrollPos = $('div.dataTables_scrollBody').scrollTop();
+                },
+                "drawCallback": function (settings) {
+                    $('div.dataTables_scrollBody').scrollTop(pageScrollPos);
+                },
                 scrollY: '275px',
                 scroller: true,
                 fixedHeader: true,
@@ -191,6 +200,18 @@
         function resetGame() {
             window.location.href = "/reset";
         }
+
+        function isScrolledToBottom() {
+            const scrollBody = document.querySelector('.dt-scroll-body');
+            return scrollBody.scrollHeight - scrollBody.scrollTop === scrollBody.clientHeight;
+        }
+
+        // function isScrolledToBottom() {
+        //     var table = $('#pgnTable').DataTable();
+        //     var bottomVisibleRow = table.row(':eq(' + table.scroller.page().end + ')', {order: 'applied', search: 'applied'}).data()[0];
+        //     var rowCount = table.rows().count();
+        //     return bottomVisibleRow === rowCount;
+        // }
 
         // On page load, get initial status
         updateStatus();
