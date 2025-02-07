@@ -15,27 +15,27 @@
             <div class="notation notation-left" id="notation-left">
                 <!-- Dynamic content will be added here -->
             </div>
-              <div class="board" id="myBoard"></div>
+            <div class="board" id="myBoard"></div>
         </div>
-          <div class="info-box">
-                <h1>Office Chess: Welcome, {{ name }}!</h1>
-                <div id="status"></div>
-                <div class="scrollable-table">
+        <div class="info-box">
+            <h1>Office Chess: Welcome, {{ name }}!</h1>
+            <div id="status"></div>
+            <div class="scrollable-table">
                 <table id="pgnTable" class="display compact" cellspacing="0" width=100%>
-                          <thead>
-                                <tr>
-                                      <th colspan="1">#</th>
-                                                <th colspan="2">White</th>
-                                                <th colspan="2">Black</th>
-                                </tr>
-                          </thead>
-                          <tbody>
-                                <!-- Rows will be dynamically added -->
-                          </tbody>
-                    </table>
-                </div>
+                    <thead>
+                        <tr>
+                            <th colspan="1">#</th>
+                            <th colspan="2">White</th>
+                            <th colspan="2">Black</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be dynamically added -->
+                    </tbody>
+                </table>
+            </div>
             <button onclick="resetGame()">Reset Game</button>
-          </div>
+        </div>
     </div>
 
     <script>
@@ -50,7 +50,8 @@
             dropOffBoard: 'snapback',
             pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
             onDragStart,
-            onDrop
+            onDrop,
+            onMousedownSquare,
         }
 
         const board = Chessboard2('myBoard', boardConfig)
@@ -77,43 +78,148 @@
 
         let moveOrientationColor;
         let squareElement;
+        let statusTimeout;
+
+        let state = {
+            selectedPiece: null,
+            availableMoves: [],
+            fromSquare: null,
+        };
+
+        // Function to set the opacity of the square element
+        function setSquareElementOpacity(element, opacity) {
+            if (typeof opacity === 'string') {
+                switch (opacity) {
+                    case 'pieceSelected':
+                    element.style.opacity = "0.5";
+                    break;
+                    case 'noPieceSelected':
+                    element.style.opacity = "1.0";
+                    break;
+                    default:
+                    console.warn('Unknown opacity setting:', opacity);
+                }
+            } else if (typeof opacity === 'number') {
+                element.style.opacity = opacity.toString();
+            } else {
+                console.warn('Invalid opacity value:', opacity);
+            }
+        }
+
+        // Check for pawn promotion
+        function isPromotionValid(piece, targetRank) {
+            return (piece === 'P' && (targetRank === '8' || targetRank === '1'));
+        }
+
+        // TODO: Implement underpromotion (to rook, bishop, or knight) in the future
+        function handlePromotion(piece, targetRank, moveStr) {
+            if (isPromotionValid(piece, targetRank)) {
+                moveStr += 'q'; // Promote to queen
+            }
+            return moveStr;
+        }
+
+        // ================================
+        //  onMousedownSquare
+        // ================================
+        function onMousedownSquare(evt, domEvt) {
+            const { piece, square } = evt;
+            const pieceColor = piece ? piece.charAt(0) : null;
+
+            // If a piece is already selected and the clicked square is a valid move
+            if (state.selectedPiece && state.availableMoves.includes(square)) {
+                let selectedPiece = state.selectedPiece[1];
+                let targetRank = square[1];
+                moveStr = state.fromSquare + square;
+                moveStr = handlePromotion(selectedPiece, targetRank, moveStr);
+                handleValidMove(moveStr);
+            } else {
+                // Reset the opacity of the source square if an invalid square is clicked
+                if (squareElement) {
+                    setSquareElementOpacity(squareElement, 'noPieceSelected');
+                    squareElement = null;
+                }
+                clearBoardState();
+            }
+        }
+
+        function handleValidMove(moveStr) {
+            $.post('/make_move', { move: moveStr })
+            .done(function(data) {
+                if (data.status === 'ok') {
+                    board.position(data.fen);
+                    updateStatus();
+                    // Reset the opacity of the source square
+                    if (squareElement) {
+                        setSquareElementOpacity(squareElement, 'noPieceSelected');
+                        squareElement = null;
+                    }
+                } else {
+                    displayStatusMessage(data.message);
+                }
+            })
+            .fail(function() {
+                board.position(dropData.oldPos);
+                displayStatusMessage("Server error, move not processed.");
+            });
+
+            board.clearCircles();
+        }
+
+        function displayStatusMessage(message) {
+            const statusElement = document.getElementById('status');
+            statusElement.innerText = message;
+            console.log(message);
+
+            // Clear any existing timeout
+            if (statusTimeout) {
+                clearTimeout(statusTimeout);
+            }
+
+            // Set a new timeout
+            statusTimeout = setTimeout(() => {
+                statusElement.innerText = '';
+            }, 5000); // Clear message after 5 seconds
+        }
+
+        function clearBoardState() {
+            board.clearCircles();
+            state.selectedPiece = null;
+            state.availableMoves = [];
+            state.fromSquare = null;
+        }
 
         // ================================
         //  onDragStart: highlight moves
         // ================================
-        function onDragStart (dragData) {
-            console.log(dragData)
-            // Clear any old circles
+        function onDragStart(dragData) {
             board.clearCircles();
 
-            // Extract square & piece from dragData
-            let fromSquare = dragData.square;
+            state.fromSquare = dragData.square;
             let piece = dragData.piece;
-            console.log(`Dragging piece ${piece} from square ${fromSquare}`);
 
-            // only pick up pieces for the side to move
-            if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false
-            if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false
+            if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false;
+            if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false;
 
-            // If there's no valid square or piece, bail out
-            if (!fromSquare || !piece) return;
+            if (!state.fromSquare || !piece) return;
 
-            squareElement = document.querySelector(`[data-square-coord="${fromSquare}"]`);
-            if (squareElement) { squareElement.style.opacity = "0.5"; }
+            state.selectedPiece = piece;
 
-            // Ask the server for all possible destination squares
-            $.post('/legal_moves', { square: fromSquare }, function(res) {
+            squareElement = document.querySelector(`[data-square-coord="${state.fromSquare}"]`);
+            if (squareElement) { setSquareElementOpacity(squareElement, 'pieceSelected'); }
+
+            $.post('/legal_moves', { square: state.fromSquare }, function(res) {
                 if (res && res.moves) {
-                    console.log(`Server responded with moves:`, res.moves);
-                    // Add circles for each valid destination
+                    state.availableMoves = res.moves;
                     res.moves.forEach(destSquare => {
-                        board.addCircle(destSquare);  // default circle
+                        board.addCircle(destSquare);
                     });
                 } else {
                     console.log('No moves returned from /legal_moves');
                 }
             }).fail(function() {
                 console.error('Failed to retrieve legal moves from server');
+                displayStatusMessage('Failed to retrieve legal moves from server');
             });
         }
 
@@ -121,37 +227,25 @@
         //  onDrop: make the move
         // ================================
         function onDrop (dropData) {
-            // Remove circles
-            board.clearCircles();
+            if (dropData.source === dropData.target) {
+                // Piece dropped back on the source square, do not clear state
+                if (squareElement) {
+                    setSquareElementOpacity(squareElement, 'pieceSelected');
+                }
+                return 'snapback';
+            }
 
+            // Reset square element opacity if needed
             if (squareElement) {
-                squareElement.style.opacity = "1.0";
+                setSquareElementOpacity(squareElement, 'noPieceSelected');
                 squareElement = null;
             }
 
-            // Build a UCI-like string, e.g. "e2e4"
-            let moveStr = dropData.source + dropData.target;
-
-            // Check for pawn promotion
-            // TODO: Implement underpromotion (to rook, bishop, or knight) in the future
             let piece = dropData.piece[1];
             let targetRank = dropData.target[1];
-            if ((piece === 'P' && targetRank === '8') || (piece === 'P' && targetRank === '1')) {
-                moveStr += 'q'; // Promote to queen
-            }
-
-            $.post('/make_move', { move: moveStr }, function(data) {
-                if (data.status === 'ok') {
-                    board.position(data.fen);
-                    updateStatus();
-                } else {
-                    // If server says illegal or error => revert
-                    document.getElementById('status').innerText = data.message;
-                }
-            }).fail(function() {
-                board.position(dropData.oldPos);
-                document.getElementById('status').innerText = "Server error, move not processed.";
-            });
+            let moveStr = dropData.source + dropData.target;
+            moveStr = handlePromotion(piece, targetRank, moveStr);
+            handleValidMove(moveStr);
 
             return 'snapback';
         }
@@ -172,7 +266,7 @@
         function updateStatus() {
             $.get('/game_status', function(data) {
                 if (data) {
-                    document.getElementById('status').innerText = data.statusText;
+                    displayStatusMessage(data.statusText);
                     const table = $('#pgnTable').DataTable();
                     table.clear(); // Clear existing data
                     data.moves.forEach(row => {
@@ -229,6 +323,7 @@
 
         // Reset the board (call server /reset)
         function resetGame() {
+            availableMoves = []; // Reset the availableMoves array
             window.location.href = "/reset";
         }
 
