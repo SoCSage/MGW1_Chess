@@ -15,27 +15,27 @@
             <div class="notation notation-left" id="notation-left">
                 <!-- Dynamic content will be added here -->
             </div>
-            <div class="board" id="myBoard"></div>
+              <div class="board" id="myBoard"></div>
         </div>
-        <div class="info-box">
-            <h1>Office Chess: Welcome, {{ name }}!</h1>
-            <div id="status"></div>
-            <table id="pgnTable" class="display compact" cellspacing="0" width="100%">
-                <thead>
-                    <tr>
-                        <th>Move #</th>
-                        <th>White Move</th>
-                        <th>White User</th>
-                        <th>Black Move</th>
-                        <th>Black User</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Rows will be dynamically added -->
-                </tbody>
-            </table>
+          <div class="info-box">
+                <h1>Office Chess: Welcome, {{ name }}!</h1>
+                <div id="status"></div>
+                <div class="scrollable-table">
+                <table id="pgnTable" class="display compact" cellspacing="0" width=100%>
+                          <thead>
+                                <tr>
+                                      <th colspan="1">#</th>
+                                                <th colspan="2">White</th>
+                                                <th colspan="2">Black</th>
+                                </tr>
+                          </thead>
+                          <tbody>
+                                <!-- Rows will be dynamically added -->
+                          </tbody>
+                    </table>
+                </div>
             <button onclick="resetGame()">Reset Game</button>
-        </div>
+          </div>
     </div>
 
     <script>
@@ -57,6 +57,23 @@
 
         function isWhitePiece (piece) { return /^w/.test(piece) }
         function isBlackPiece (piece) { return /^b/.test(piece) }
+
+        function isTableScrolledToBottom() {
+            const scrollContainer = document.querySelector('.dt-scroll-body');
+            if (!scrollContainer) {
+                console.error('Scroll container not found');
+                return false;
+            }
+            const { scrollHeight, scrollTop, clientHeight } = scrollContainer;
+            return scrollHeight === scrollTop + clientHeight;
+        }
+
+        function scrollTableBackToBottom() {
+            const dataTable = $('#pgnTable').DataTable();
+            const totalRows = dataTable.rows().count();
+            if (totalRows === 0) return;
+            dataTable.scroller.toPosition(totalRows - 1, false);
+        }
 
         let moveOrientationColor;
         let squareElement;
@@ -152,13 +169,10 @@
             updateStatus();
         });
 
-        // Refresh the game status (FEN, PGN, etc.)
         function updateStatus() {
             $.get('/game_status', function(data) {
                 if (data) {
                     document.getElementById('status').innerText = data.statusText;
-                    <!--document.getElementById('fenSpan').innerText = data.fen;-->
-                    <!--document.getElementById('pgnSpan').innerText = data.pgn;-->
                     const table = $('#pgnTable').DataTable();
                     table.clear(); // Clear existing data
                     data.moves.forEach(row => {
@@ -170,7 +184,14 @@
                         row["Black User"]
                         ]);
                     });
+                    // Check if the table was scrolled to the bottom before redrawing
+                    const tableWasScrolledToBottom = isTableScrolledToBottom();
+                    // Redraw the table
                     table.draw();
+                    // Scroll back to the bottom if it was previously scrolled to the bottom
+                    if (tableWasScrolledToBottom) {
+                        scrollTableBackToBottom();
+                    }
                 }
                 if (board) {
                     const newOrientation = board.orientation(data.orientation);
@@ -182,12 +203,23 @@
 
         $(document).ready(function() {
             $('#pgnTable').DataTable({
-                paging: false,
-                searching: true,
+                "preDrawCallback": (settings) => {
+                    pageScrollPos = $('div.dataTables_scrollBody').scrollTop();
+                },
+                "drawCallback": (settings) => {
+                    $('div.dataTables_scrollBody').scrollTop(pageScrollPos);
+                },
+                scrollY: '275px',
+                scroller: true,
+                fixedHeader: true,
+                searching: false,
+                ordering: false,
                 info: false,
                 autoWidth: true,
                 columnDefs: [
-                { className: "dt-center", targets: "_all" }
+                { className: "dt-center", targets: "_all" },
+                { className: "column-white", targets: [1, 2] }, // Apply to White columns
+                { className: "column-black", targets: [3, 4] }  // Apply to Black columns
                 ]
             });
 
