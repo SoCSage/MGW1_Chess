@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
         position: initialFen,
         draggable: true,
         dropOffBoard: 'snapback',
-        pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: 'static/assets/chesspieces/wikipedia/{piece}.png',
         onDragStart,
         onDrop,
         onMousedownSquare,
