@@ -31,10 +31,10 @@ class ChessGame {
         // Initialize the Chessboard2
         const boardConfig = {
             sparePieces: true,
-            position: this.initialFen,
+            position: 'start',
             draggable: true,
             dropOffBoard: 'snapback',
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+            pieceTheme: '/static/chesspieces/wikipedia/{piece}.png',
             onDragStart: this.onDragStart.bind(this),
             onDrop: this.onDrop.bind(this),
             onMousedownSquare: this.onMousedownSquare.bind(this),
@@ -344,3 +344,18 @@ class ChessGame {
     // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DIVIDER
     // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DIVIDER
 }
+//
+// // Ensure page is loaded
+// document.addEventListener('DOMContentLoaded', function () {
+//
+//     // Pull initial FEN from the server-side template variable
+//     const initialFen = "{{ fen }}";
+//     console.log("Initial FEN:", this.initialFen);
+//     const chessGame = new ChessGame(initialFen);
+//
+//     chessGame.initializeBoard();
+//
+//     window.resetGame = () => {
+//         chessGame.resetGame();
+//     };
+// });
