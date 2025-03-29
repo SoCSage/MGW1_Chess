@@ -3,8 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Pull initial FEN from the server-side template variable
     const initialFen = "{{ fen }}";
-    const chessGame = new ChessGame(initialFen);
-    // const chessGame = new SimpleChessBoard(initialFen); --Testing pieces not showing
+    const chessGame = new ChessGame(window.initialFen);
 
     chessGame.initializeBoard();
 

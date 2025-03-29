@@ -344,18 +344,4 @@ class ChessGame {
     // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DIVIDER
     // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DIVIDER
 }
-//
-// // Ensure page is loaded
-// document.addEventListener('DOMContentLoaded', function () {
-//
-//     // Pull initial FEN from the server-side template variable
-//     const initialFen = "{{ fen }}";
-//     console.log("Initial FEN:", this.initialFen);
-//     const chessGame = new ChessGame(initialFen);
-//
-//     chessGame.initializeBoard();
-//
-//     window.resetGame = () => {
-//         chessGame.resetGame();
-//     };
-// });
+
