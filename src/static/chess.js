@@ -34,7 +34,7 @@ class ChessGame {
             position: this.initialFen,
             draggable: true,
             dropOffBoard: 'snapback',
-            pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
             onDragStart: this.onDragStart.bind(this),
             onDrop: this.onDrop.bind(this),
             onMousedownSquare: this.onMousedownSquare.bind(this),

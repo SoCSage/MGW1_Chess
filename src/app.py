@@ -24,6 +24,13 @@ manager = helper.OrientationManager()
 tracker = helper.PGN_Tracker()
 
 
+@app.after_request
+def remove_browsing_topics(response):
+    if "Permissions-Policy" in response.headers:
+        del response.headers["Permissions-Policy"]
+    return response
+
+
 @app.route("/legal_moves", methods=["POST"])
 def legal_moves():
     """
