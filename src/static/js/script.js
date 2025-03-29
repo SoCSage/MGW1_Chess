@@ -6,4 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const chessGame = new ChessGame(initialFen);
 
     chessGame.initializeBoard();
+
+    window.resetGame = () => {
+        chessGame.resetGame();
+    };
 });

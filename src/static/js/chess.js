@@ -8,10 +8,9 @@ class ChessGame {
 
     constructor(initialFen) {
         //Initial FEN string
-        this.initialFen - initialFen;
+        this.initialFen = initialFen;
         this.board = null;
         this.socket = null;
-        this.statusTimeout = null;
 
         this.moveOrientationColor = null;
         this.squareElement = null;
@@ -32,10 +31,10 @@ class ChessGame {
         // Initialize the Chessboard2
         const boardConfig = {
             sparePieces: true,
-            position: initialFen,
+            position: this.initialFen,
             draggable: true,
             dropOffBoard: 'snapback',
-            pieceTheme: 'static/assets/chesspieces/wikipedia/{piece}.png',
+            pieceTheme: 'static/chesspieces/wikipedia/{piece}.png',
             onDragStart: this.onDragStart.bind(this),
             onDrop: this.onDrop.bind(this),
             onMousedownSquare: this.onMousedownSquare.bind(this),
@@ -44,15 +43,16 @@ class ChessGame {
         this.socket = io(location.origin, { path: '/socket.io' }); // Connect to Socket.IO
         // Listen for "board_update" events from the server
 
-        socket.on('board_update', function(data) {
+        this.socket.on('board_update', (data) => {
             console.log("Received board_update from server:", data);
             // data.fen, data.pgn, data.statusText
-            if (board) {
-                board.position(data.fen);
+            if (this.board) {
+                this.board.position(data.fen);
             }
-            updateStatus();
+            this.updateStatus();
         });
 
+        let pageScrollPos = null;
         $('#pgnTable').DataTable({
             "preDrawCallback": (settings) => {
                 pageScrollPos = $('div.dataTables_scrollBody').scrollTop();
@@ -94,33 +94,33 @@ class ChessGame {
     //  onDragStart: highlight moves
     // ================================
     onDragStart(dragData) {
-        board.clearCircles();
+        this.board.clearCircles();
 
-        state.fromSquare = dragData.square;
+        this.state.fromSquare = dragData.square;
         let piece = dragData.piece;
 
-        if (moveOrientationColor === 'white' && !isWhitePiece(piece)) return false;
-        if (moveOrientationColor === 'black' && !isBlackPiece(piece)) return false;
+        if (this.moveOrientationColor === 'white' && !this.isWhitePiece(piece)) return false;
+        if (this.moveOrientationColor === 'black' && !this.isBlackPiece(piece)) return false;
 
-        if (!state.fromSquare || !piece) return;
+        if (!this.state.fromSquare || !piece) return;
 
-        state.selectedPiece = piece;
+        this.state.selectedPiece = piece;
 
-        squareElement = document.querySelector(`[data-square-coord="${state.fromSquare}"]`);
-        if (squareElement) { setSquareElementOpacity(squareElement, 'pieceSelected'); }
+        this.squareElement = document.querySelector(`[data-square-coord="${this.state.fromSquare}"]`);
+        if (this.squareElement) { this.setSquareElementOpacity(this.squareElement, 'pieceSelected'); }
 
-        $.post('/legal_moves', { square: state.fromSquare }, function(res) {
+        $.post('/legal_moves', { square: this.state.fromSquare }, (res) => {
             if (res && res.moves) {
-                state.availableMoves = res.moves;
+                this.state.availableMoves = res.moves;
                 res.moves.forEach(destSquare => {
-                    board.addCircle(destSquare);
+                    this.board.addCircle(destSquare);
                 });
             } else {
                 console.log('No moves returned from /legal_moves');
             }
-        }).fail(function() {
+        }).fail(() => {
             console.error('Failed to retrieve legal moves from server');
-            displayStatusMessage('Failed to retrieve legal moves from server');
+            this.displayStatusMessage('Failed to retrieve legal moves from server');
         });
     }
 
@@ -130,23 +130,23 @@ class ChessGame {
     onDrop (dropData) {
         if (dropData.source === dropData.target) {
             // Piece dropped back on the source square, do not clear state
-            if (squareElement) {
-                setSquareElementOpacity(squareElement, 'pieceSelected');
+            if (this.squareElement) {
+                this.setSquareElementOpacity(this.squareElement, 'pieceSelected');
             }
             return 'snapback';
         }
 
         // Reset square element opacity if needed
-        if (squareElement) {
-            setSquareElementOpacity(squareElement, 'noPieceSelected');
-            squareElement = null;
+        if (this.squareElement) {
+            this.setSquareElementOpacity(this.squareElement, 'noPieceSelected');
+            this.squareElement = null;
         }
 
         let piece = dropData.piece[1];
         let targetRank = dropData.target[1];
         let moveStr = dropData.source + dropData.target;
-        moveStr = handlePromotion(piece, targetRank, moveStr);
-        handleValidMove(moveStr);
+        moveStr = this.handlePromotion(piece, targetRank, moveStr);
+        this.handleValidMove(moveStr);
 
         return 'snapback';
     }
@@ -159,26 +159,26 @@ class ChessGame {
         const pieceColor = piece ? piece.charAt(0) : null;
 
         // If a piece is already selected and the clicked square is a valid move
-        if (state.selectedPiece && state.availableMoves.includes(square)) {
-            let selectedPiece = state.selectedPiece[1];
+        if (this.state.selectedPiece && this.state.availableMoves.includes(square)) {
+            let selectedPiece = this.state.selectedPiece[1];
             let targetRank = square[1];
-            moveStr = state.fromSquare + square;
-            moveStr = handlePromotion(selectedPiece, targetRank, moveStr);
-            handleValidMove(moveStr);
+            let moveStr = this.state.fromSquare + square;
+            moveStr = this.handlePromotion(selectedPiece, targetRank, moveStr);
+            this.handleValidMove(moveStr);
         } else {
             // Reset the opacity of the source square if an invalid square is clicked
-            if (squareElement) {
-                setSquareElementOpacity(squareElement, 'noPieceSelected');
-                squareElement = null;
+            if (this.squareElement) {
+                this.setSquareElementOpacity(this.squareElement, 'noPieceSelected');
+                this.squareElement = null;
             }
-            clearBoardState();
+            this.clearBoardState();
         }
     }
 
     updateStatus() {
-        $.get('/game_status', function(data) {
+        $.get('/game_status', (data) => {
             if (data) {
-                displayStatusMessage(data.statusText);
+                this.displayStatusMessage(data.statusText);
                 const table = $('#pgnTable').DataTable();
                 table.clear(); // Clear existing data
                 data.moves.forEach(row => {
@@ -191,32 +191,32 @@ class ChessGame {
                     ]);
                 });
                 // Check if the table was scrolled to the bottom before redrawing
-                const tableWasScrolledToBottom = isTableScrolledToBottom();
+                const tableWasScrolledToBottom = this.isTableScrolledToBottom();
                 // Redraw the table
                 table.draw();
                 // Scroll back to the bottom if it was previously scrolled to the bottom
                 if (tableWasScrolledToBottom) {
-                    scrollTableBackToBottom();
+                    this.scrollTableBackToBottom();
                 }
             }
-            if (board) {
-                const newOrientation = board.orientation(data.orientation);
-                generateNotations();
-                moveOrientationColor = data.orientation;
+            if (this.board) {
+                const newOrientation = this.board.orientation(data.orientation);
+                this.generateNotations();
+                this.moveOrientationColor = data.orientation;
             }
         });
     }
 
     clearBoardState() {
         this.board.clearCircles();
-        state.selectedPiece = null;
-        state.availableMoves = [];
-        state.fromSquare = null;
+        this.state.selectedPiece = null;
+        this.state.availableMoves = [];
+        this.state.fromSquare = null;
     }
 
     // Reset the board (call server /reset)
     resetGame() {
-        clearBoardState();
+        this.clearBoardState();
         window.location.href = "/reset";
     }
 
@@ -239,25 +239,24 @@ class ChessGame {
 
     handleValidMove(moveStr) {
         $.post('/make_move', { move: moveStr })
-        .done(function(data) {
+        .done((data) => {
             if (data.status === 'ok') {
-                board.position(data.fen);
-                updateStatus();
+                this.board.position(data.fen);
+                this.updateStatus();
                 // Reset the opacity of the source square
-                if (squareElement) {
-                    setSquareElementOpacity(squareElement, 'noPieceSelected');
-                    squareElement = null;
+                if (this.squareElement) {
+                    this.setSquareElementOpacity(this.squareElement, 'noPieceSelected');
+                    this.squareElement = null;
                 }
             } else {
-                displayStatusMessage(data.message);
+                this.displayStatusMessage(data.message);
             }
         })
-        .fail(function() {
-            board.position(dropData.oldPos);
-            displayStatusMessage("Server error, move not processed.");
+        .fail(() => {
+            this.displayStatusMessage("Server error, move not processed.");
         });
 
-        board.clearCircles();
+        this.board.clearCircles();
     }
 
     // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX DIVIDER
@@ -272,8 +271,8 @@ class ChessGame {
         fileNotation.innerHTML = '';
         rankNotation.innerHTML = '';
 
-        const files = moveOrientationColor === 'white' ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] : ['H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
-        const ranks = moveOrientationColor === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
+        const files = this.moveOrientationColor === 'white' ? ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] : ['H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
+        const ranks = this.moveOrientationColor === 'white' ? ['8', '7', '6', '5', '4', '3', '2', '1'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
 
         files.forEach(file => {
             const span = document.createElement('span');
