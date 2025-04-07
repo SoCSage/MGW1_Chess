@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="container">
+<main class="container">
     <h2>Office Chess</h2>
 
     <!--<div class="tabs">-->
@@ -32,7 +32,7 @@
         <p>{{error}}</p>
     </div>
     {% endif %}
-</div>
+</main>
 
 <!--script>-->
 <!--   document.addEventListener('DOMContentLoaded', function() {-->
@@ -49,5 +49,14 @@
 <!--       });-->
 <!--   });-->
 <!--/script>-->
+<footer>
+    <p>© <span id="year"></span> MGW Chess</p>
+    <script>
+        window.onload = function() {
+            const currentYear = new Date().getFullYear();
+            document.getElementById('year').textContent = currentYear;
+        };
+    </script>
+</footer>
 
 {% endblock %}

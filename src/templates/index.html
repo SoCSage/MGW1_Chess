@@ -6,9 +6,9 @@
 <script src="{{ url_for('static', filename='chess.js') }}"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 
-<div class="container">
-    <div class="game-container">
-        <div class = "board-wrapper">
+<main class="container">
+    <article class="game-container">
+	<section class="board-wrapper">
             <div class="notation notation-bottom" id="notation-bottom">
                 <!-- Dynamic content will be added here -->
             </div>
@@ -16,8 +16,8 @@
                 <!-- Dynamic content will be added here -->
             </div>
             <div class="board" id="myBoard"></div>
-        </div>
-        <div class="info-box">
+        </section>
+        <aside class="info-box">
             <h1>Office Chess: Welcome, {{ name }}!</h1>
             <div id="status"></div>
             <div class="scrollable-table">
@@ -35,8 +35,18 @@
                 </table>
             </div>
             <button onclick="resetGame()">Reset Game</button>
-        </div>
-    </div>
-</div>
+        </aside>
+    </article>
+</main>
+
+<footer>
+    <p>© <span id="year"></span> MGW Chess</p>
+    <script>
+        window.onload = function() {
+            const currentYear = new Date().getFullYear();
+            document.getElementById('year').textContent = currentYear;
+        };
+    </script>
+</footer>
 
 {% endblock %}
