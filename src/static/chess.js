@@ -12,7 +12,7 @@ class ChessGame {
         this.board = null;
         this.socket = null;
 
-        this.moveOrientationColor = initialFen.includes('w') ? 'white' : initialFen.includes('b') ? 'black' : null;
+        this.moveOrientationColor = initialFen.includes(' w ') ? 'white' : initialFen.includes(' b ') ? 'black' : null;
         this.squareElement = null;
         this.statusTimeout = null;
 
