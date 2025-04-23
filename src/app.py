@@ -24,6 +24,13 @@ manager = helper.OrientationManager()
 tracker = helper.PGN_Tracker()
 
 
+@app.after_request
+def remove_browsing_topics(response):
+    if "Permissions-Policy" in response.headers:
+        del response.headers["Permissions-Policy"]
+    return response
+
+
 @app.route("/legal_moves", methods=["POST"])
 def legal_moves():
     """
@@ -187,4 +194,4 @@ def index():
 
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, host="0.0.0.0", allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, host="0.0.0.0", port=5003, allow_unsafe_werkzeug=True)
